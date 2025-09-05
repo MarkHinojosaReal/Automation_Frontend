@@ -2,9 +2,9 @@ import type { GatsbyConfig } from "gatsby"
 
 const config: GatsbyConfig = {
   siteMetadata: {
-    title: "YouTrack Dashboard",
-    description: "Modern ticketing and reporting UI for YouTrack",
-    siteUrl: "https://your-username.github.io/Automation_Frontend",
+    title: "YouTrack Automation Dashboard",
+    description: "Modern automation request and reporting UI for YouTrack with Ocean Breeze design",
+    siteUrl: "https://MarkHinojosaReal.github.io/Automation_Frontend",
   },
   graphqlTypegen: true,
   plugins: [
