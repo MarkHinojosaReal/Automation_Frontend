@@ -1,0 +1,183 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+@layer base {
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
+    scroll-behavior: smooth;
+  }
+  
+  body {
+    @apply text-breeze-100;
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 25%, #334155 50%, #475569 75%, #64748b 100%);
+    background-attachment: fixed;
+    min-height: 100vh;
+  }
+  
+  /* Custom scrollbar */
+  ::-webkit-scrollbar {
+    width: 8px;
+  }
+  
+  ::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.1);
+    border-radius: 4px;
+  }
+  
+  ::-webkit-scrollbar-thumb {
+    background: rgba(6, 182, 212, 0.3);
+    border-radius: 4px;
+    backdrop-filter: blur(4px);
+  }
+  
+  ::-webkit-scrollbar-thumb:hover {
+    background: rgba(6, 182, 212, 0.5);
+  }
+}
+
+@layer components {
+  /* Glass morphism card */
+  .glass-card {
+    @apply backdrop-blur-md bg-white/10 border border-white/20 rounded-xl shadow-xl;
+    box-shadow: 
+      0 8px 32px 0 rgba(31, 38, 135, 0.37),
+      0 0 0 1px rgba(255, 255, 255, 0.1) inset;
+  }
+  
+  /* Enhanced card with hover effects */
+  .card {
+    @apply glass-card p-6 transition-all duration-300 hover:bg-white/15 hover:shadow-2xl hover:scale-[1.02];
+  }
+  
+  /* Liquid glass navigation */
+  .nav-glass {
+    @apply backdrop-blur-lg bg-white/5 border-b border-white/10;
+    box-shadow: 0 4px 24px 0 rgba(31, 38, 135, 0.2);
+  }
+  
+  /* Primary button with glass effect */
+  .btn-primary {
+    @apply bg-ocean-500/80 hover:bg-ocean-600/90 text-white font-medium py-2.5 px-6 rounded-xl transition-all duration-300 backdrop-blur-sm border border-ocean-400/30;
+    box-shadow: 0 4px 16px rgba(6, 182, 212, 0.25);
+  }
+  
+  .btn-primary:hover {
+    @apply shadow-lg transform translate-y-[-1px];
+    box-shadow: 0 8px 25px rgba(6, 182, 212, 0.4);
+  }
+  
+  /* Secondary button with glass effect */
+  .btn-secondary {
+    @apply bg-white/10 hover:bg-white/20 text-breeze-100 font-medium py-2.5 px-6 rounded-xl border border-white/20 transition-all duration-300 backdrop-blur-sm;
+  }
+  
+  .btn-secondary:hover {
+    @apply transform translate-y-[-1px] shadow-lg;
+  }
+  
+  /* Accent button */
+  .btn-accent {
+    @apply bg-accent-500/80 hover:bg-accent-600/90 text-white font-medium py-2.5 px-6 rounded-xl transition-all duration-300 backdrop-blur-sm border border-accent-400/30;
+    box-shadow: 0 4px 16px rgba(242, 117, 10, 0.25);
+  }
+  
+  .btn-accent:hover {
+    @apply shadow-lg transform translate-y-[-1px];
+    box-shadow: 0 8px 25px rgba(242, 117, 10, 0.4);
+  }
+  
+  /* Stats card with glow effect */
+  .stats-card {
+    @apply card relative overflow-hidden;
+  }
+  
+  .stats-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, rgba(6, 182, 212, 0.8), transparent);
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  .stats-card:hover::before {
+    opacity: 1;
+  }
+  
+  /* Input styling */
+  .input-glass {
+    @apply bg-white/10 border border-white/20 rounded-xl px-4 py-2.5 text-breeze-100 placeholder-breeze-300 backdrop-blur-sm transition-all duration-300;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  }
+  
+  .input-glass:focus {
+    @apply outline-none border-ocean-400/50 bg-white/15;
+    box-shadow: 0 0 0 3px rgba(6, 182, 212, 0.1);
+  }
+  
+  /* Floating elements */
+  .float-animation {
+    animation: float 6s ease-in-out infinite;
+  }
+  
+  /* Glow effect for important elements */
+  .glow-effect {
+    animation: glow 2s ease-in-out infinite alternate;
+  }
+  
+  /* Sidebar glass effect */
+  .sidebar-glass {
+    @apply backdrop-blur-lg bg-white/5 border-r border-white/10;
+    box-shadow: 4px 0 24px 0 rgba(31, 38, 135, 0.2);
+  }
+  
+  /* Menu item hover */
+  .menu-item {
+    @apply transition-all duration-300 hover:bg-white/10 hover:backdrop-blur-md rounded-xl;
+  }
+  
+  .menu-item.active {
+    @apply bg-ocean-500/20 text-ocean-200 border-r-2 border-ocean-400;
+    box-shadow: 0 0 20px rgba(6, 182, 212, 0.2);
+  }
+
+  /* Line clamp utilities */
+  .line-clamp-2 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
+  }
+
+  .line-clamp-3 {
+    overflow: hidden;
+    display: -webkit-box;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 3;
+  }
+
+  /* Markdown prose styling overrides */
+  .prose-sm {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+
+  .prose-invert {
+    color: rgba(255, 255, 255, 0.7);
+  }
+
+  .prose-invert h1, 
+  .prose-invert h2, 
+  .prose-invert h3, 
+  .prose-invert h4, 
+  .prose-invert h5, 
+  .prose-invert h6 {
+    color: rgba(255, 255, 255, 0.9);
+  }
+}
