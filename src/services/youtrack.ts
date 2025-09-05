@@ -40,8 +40,8 @@ class YouTrackService {
 
   constructor() {
     this.config = {
-      proxyUrl: process.env.GATSBY_PROXY_URL || 'http://localhost:3001',
-      useProxy: process.env.NODE_ENV === 'development' || process.env.GATSBY_USE_PROXY === 'true'
+      proxyUrl: process.env.GATSBY_PROXY_URL || 'https://youtrack-proxy.onrender.com',
+      useProxy: true // Always use proxy for CORS handling
     }
   }
 

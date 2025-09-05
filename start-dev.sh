@@ -26,19 +26,18 @@ npm run type-check
 
 if [ $? -eq 0 ]; then
     echo "✅ Type check passed"
-    echo "🌟 Starting development servers..."
-    echo "🔗 Proxy server: http://localhost:3001"
-    echo "📱 Frontend app: http://localhost:8000"
-    echo "🔍 GraphiQL explorer: http://localhost:8000/___graphql"
-    echo ""
-    echo "🚨 CORS SOLUTION: Using proxy server to bypass CORS restrictions"
-    echo "💡 The proxy server handles YouTrack API calls to avoid browser CORS issues"
-    echo ""
-    echo "Press Ctrl+C to stop both servers"
-    echo ""
-    
-    # Start both proxy and development server
-    npm run develop
+    echo "🌟 Starting development server..."
+echo "📱 Frontend app: http://localhost:8000"
+echo "🔍 GraphiQL explorer: http://localhost:8000/___graphql"
+echo ""
+echo "🚨 CORS SOLUTION: Using Render proxy server"
+echo "💡 Frontend connects to https://youtrack-proxy.onrender.com for YouTrack API"
+echo ""
+echo "Press Ctrl+C to stop the server"
+echo ""
+
+# Start development server
+npm run develop
 else
     echo "❌ Type check failed. Please fix the errors and try again."
     exit 1
