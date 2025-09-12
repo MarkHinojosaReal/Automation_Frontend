@@ -14,8 +14,19 @@ app.use(cors({
 app.use(express.json());
 
 // YouTrack configuration
-const YOUTRACK_BASE_URL = process.env.YOUTRACK_BASE_URL || 'https://realbrokerage.youtrack.cloud';
-const YOUTRACK_TOKEN = process.env.YOUTRACK_TOKEN || 'perm-bWFyay5oaW5vam9zYQ==.NTktMTU4.0k4Ad1tAdROERwu5cBfYRMdUcDS6T3';
+const YOUTRACK_BASE_URL = process.env.YOUTRACK_BASE_URL;
+const YOUTRACK_TOKEN = process.env.YOUTRACK_TOKEN;
+
+// Validate required environment variables
+if (!YOUTRACK_BASE_URL) {
+  console.error('❌ YOUTRACK_BASE_URL environment variable is required');
+  process.exit(1);
+}
+
+if (!YOUTRACK_TOKEN) {
+  console.error('❌ YOUTRACK_TOKEN environment variable is required');
+  process.exit(1);
+}
 
 // Helper function to make requests to YouTrack
 async function makeYouTrackRequest(endpoint) {
@@ -55,7 +66,7 @@ async function makeYouTrackRequest(endpoint) {
 }
 
 // Health check endpoint
-app.get('/health', (req, res) => {
+app.get('/health', (_req, res) => {
   res.json({ status: 'ok', message: 'YouTrack proxy server is running' });
 });
 
@@ -159,12 +170,12 @@ app.all('/api/youtrack/*', async (req, res) => {
 app.use(express.static(path.join(__dirname, '../public')));
 
 // Catch all handler: send back index.html for any non-API routes
-app.get('*', (req, res) => {
+app.get('*', (_req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 
 // Error handling middleware
-app.use((err, req, res, next) => {
+app.use((err, _req, res, _next) => {
   console.error('💥 Unhandled error:', err);
   res.status(500).json({
     error: 'Internal server error',
