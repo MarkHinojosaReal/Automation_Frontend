@@ -29,22 +29,29 @@ if (!YOUTRACK_TOKEN) {
 }
 
 // Helper function to make requests to YouTrack
-async function makeYouTrackRequest(endpoint) {
+async function makeYouTrackRequest(endpoint, method = 'GET', body = null) {
   const fetch = (await import('node-fetch')).default;
   
   try {
     const url = `${YOUTRACK_BASE_URL}${endpoint}`;
-    console.log(`🚀 Proxying request to: ${url}`);
+    console.log(`🚀 Proxying ${method} request to: ${url}`);
     
-    const response = await fetch(url, {
-      method: 'GET',
+    const requestOptions = {
+      method,
       headers: {
         'Authorization': `Bearer ${YOUTRACK_TOKEN}`,
         'Accept': 'application/json',
         'Content-Type': 'application/json',
         'Cache-Control': 'no-cache',
       },
-    });
+    };
+
+    if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+      requestOptions.body = JSON.stringify(body);
+      console.log(`📝 Request body:`, body);
+    }
+    
+    const response = await fetch(url, requestOptions);
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -57,7 +64,7 @@ async function makeYouTrackRequest(endpoint) {
     }
 
     const data = await response.json();
-    console.log(`✅ Successfully fetched ${Array.isArray(data) ? data.length : 'data'} items`);
+    console.log(`✅ Successfully ${method === 'POST' ? 'created' : 'fetched'} ${Array.isArray(data) ? data.length : 'data'} items`);
     return data;
   } catch (error) {
     console.error('❌ Proxy request failed:', error.message);
@@ -110,6 +117,22 @@ app.get('/api/youtrack/issues', async (req, res) => {
   }
 });
 
+// POST endpoint for creating issues
+app.post('/api/youtrack/issues', async (req, res) => {
+  try {
+    console.log('🆕 Creating new YouTrack issue');
+    const endpoint = '/api/issues';
+    
+    const data = await makeYouTrackRequest(endpoint, 'POST', req.body);
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
+});
+
 // Proxy endpoint for specific issue
 app.get('/api/youtrack/issues/:issueId', async (req, res) => {
   try {
@@ -146,6 +169,55 @@ app.get('/api/youtrack/projects/:projectId/custom-fields/:fieldName', async (req
       error: error.message,
       timestamp: new Date().toISOString()
     });
+  }
+});
+
+// Metabase card inspector endpoint
+app.post('/api/metabase/inspect', async (req, res) => {
+  try {
+    const { cardId } = req.body;
+    
+    if (!cardId) {
+      return res.status(400).json({ error: 'Card ID is required' });
+    }
+
+    // Path to the Python script
+    const scriptPath = path.join(__dirname, '..', 'metabase_inspector.py');
+    
+    // Spawn Python process
+    const { spawn } = require('child_process');
+    const python = spawn('python3', [scriptPath, cardId]);
+    
+    let output = '';
+    let errorOutput = '';
+
+    python.stdout.on('data', (data) => {
+      output += data.toString();
+    });
+
+    python.stderr.on('data', (data) => {
+      errorOutput += data.toString();
+    });
+
+    python.on('close', (code) => {
+      if (code !== 0) {
+        console.error('Python script error:', errorOutput);
+        return res.status(500).send(`Error executing script: ${errorOutput}`);
+      }
+      
+      // Return plaintext response
+      res.setHeader('Content-Type', 'text/plain');
+      res.send(output);
+    });
+
+    python.on('error', (error) => {
+      console.error('Failed to start Python process:', error);
+      res.status(500).send(`Failed to execute script: ${error.message}`);
+    });
+
+  } catch (error) {
+    console.error('Metabase inspection error:', error);
+    res.status(500).send(`Server error: ${error.message}`);
   }
 });
 
