@@ -16,11 +16,7 @@ import {
   Play,
   Target
 } from "lucide-react"
-import { 
-  mockPriorityData, 
-  mockStatusData
-} from "../utils/mockData"
-import type { DashboardStats, ChartData } from "../types"
+import type { DashboardStats } from "../types"
 
 function IndexPage() {
   const { tickets, loading, error, refetch } = useYouTrack()
@@ -33,6 +29,92 @@ function IndexPage() {
     myTickets: tickets.filter(t => t.assignee?.id === "1").length,
     overdueTickets: 0 // We'll calculate this properly when we have more data
   }), [tickets])
+
+  // Generate task priority data with ordered legend
+  const taskPriorityData = useMemo(() => {
+    if (!tickets.length) return []
+    const priorityCount: { [key: string]: number } = {}
+    
+    tickets.forEach(ticket => {
+      const priority = ticket.priority.name
+      // Normalize the priority labels by removing numbers
+      let normalizedPriority = priority
+      if (priority === '0 - Urgent') normalizedPriority = 'Urgent'
+      else if (priority === '1 - High') normalizedPriority = 'High'
+      else if (priority === '2 - Medium') normalizedPriority = 'Medium'
+      else if (priority === '3 - Low') normalizedPriority = 'Low'
+      else if (priority === 'TBD') normalizedPriority = 'TBD'
+      else {
+        // Remove any number prefix pattern like "4 - Something" -> "Something"
+        normalizedPriority = priority.replace(/^\d+\s*-\s*/, '')
+      }
+      
+      priorityCount[normalizedPriority] = (priorityCount[normalizedPriority] || 0) + 1
+    })
+    
+    // Define priority order: Low, Medium, High, Urgent, TBD
+    const priorityOrder = ['Low', 'Medium', 'High', 'Urgent', 'TBD']
+    const priorityColors = {
+      'Low': '#10b981',
+      'Medium': '#f59e0b', 
+      'High': '#ef4444',
+      'Urgent': '#dc2626',
+      'TBD': '#14b8a6'
+    }
+    
+    return priorityOrder
+      .filter(priority => priorityCount[priority] > 0)
+      .map(priority => ({
+        name: priority,
+        value: priorityCount[priority],
+        color: priorityColors[priority as keyof typeof priorityColors] || '#06b6d4'
+      }))
+  }, [tickets])
+
+  // Generate task status data with ordered legend
+  const taskStatusData = useMemo(() => {
+    if (!tickets.length) return []
+    const statusCount: { [key: string]: number } = {}
+    
+    tickets.forEach(ticket => {
+      const status = ticket.state.name
+      statusCount[status] = (statusCount[status] || 0) + 1
+    })
+    
+    // Define status order: To Do, In Progress, Done, Needs Scoping
+    // Map actual status names to our desired order
+    const statusMapping: { [key: string]: string } = {
+      'Open': 'To Do',
+      'To Do': 'To Do',
+      'In Progress': 'In Progress',
+      'Done': 'Done',
+      'Completed': 'Done',
+      'Needs Scoping': 'Needs Scoping'
+    }
+    
+    const statusOrder = ['To Do', 'In Progress', 'Done', 'Needs Scoping']
+    const statusColors = {
+      'To Do': '#3b82f6',
+      'In Progress': '#f59e0b', 
+      'Done': '#10b981',
+      'Needs Scoping': '#14b8a6'
+    }
+    
+    // Group statuses by normalized names
+    const normalizedStatusCount: { [key: string]: number } = {}
+    Object.entries(statusCount).forEach(([status, count]) => {
+      const normalizedStatus = statusMapping[status] || status
+      normalizedStatusCount[normalizedStatus] = (normalizedStatusCount[normalizedStatus] || 0) + count
+    })
+    
+    return statusOrder
+      .filter(status => normalizedStatusCount[status] > 0)
+      .map(status => ({
+        name: status,
+        value: normalizedStatusCount[status],
+        color: statusColors[status as keyof typeof statusColors] || '#06b6d4'
+      }))
+  }, [tickets])
   
   // Generate project charts data with matching color schemes and normalized labels
   const projectPriorityData = useMemo(() => {
@@ -56,34 +138,67 @@ function IndexPage() {
       priorityCount[normalizedPriority] = (priorityCount[normalizedPriority] || 0) + 1
     })
     
-    return Object.entries(priorityCount).map(([name, value]) => ({
-      name,
-      value,
-      color: name === 'Urgent' ? '#dc2626' :
-             name === 'High' ? '#ef4444' : 
-             name === 'Medium' ? '#f59e0b' : 
-             name === 'Low' ? '#10b981' :
-             name === 'TBD' ? '#8b5cf6' :
-             '#06b6d4' // Default cyan color for any other priorities
-    }))
+    // Define priority order: Low, Medium, High, Urgent, TBD
+    const priorityOrder = ['Low', 'Medium', 'High', 'Urgent', 'TBD']
+    const priorityColors = {
+      'Low': '#10b981',
+      'Medium': '#f59e0b', 
+      'High': '#ef4444',
+      'Urgent': '#dc2626',
+      'TBD': '#14b8a6'
+    }
+    
+    return priorityOrder
+      .filter(priority => priorityCount[priority] > 0)
+      .map(priority => ({
+        name: priority,
+        value: priorityCount[priority],
+        color: priorityColors[priority as keyof typeof priorityColors] || '#06b6d4'
+      }))
   }, [projects])
 
   const projectStatusData = useMemo(() => {
     if (!projects.length) return []
     const statusCount: { [key: string]: number } = {}
+    
     projects.forEach(project => {
       const status = project.state.name
       statusCount[status] = (statusCount[status] || 0) + 1
     })
-    return Object.entries(statusCount).map(([name, value]) => ({
-      name,
-      value,
-      color: name.includes('Progress') ? '#f59e0b' : 
-             name.includes('Done') || name.includes('Completed') ? '#10b981' : 
-             name.includes('Open') || name.includes('To Do') ? '#3b82f6' :
-             name.includes('Scoping') ? '#8b5cf6' : // Purple for Needs Scoping
-             '#06b6d4' // Cyan instead of gray for other statuses
-    }))
+    
+    // Define status order: To Do, In Progress, Done, Needs Scoping
+    // Map actual status names to our desired order
+    const statusMapping: { [key: string]: string } = {
+      'Open': 'To Do',
+      'To Do': 'To Do',
+      'In Progress': 'In Progress',
+      'Done': 'Done',
+      'Completed': 'Done',
+      'Needs Scoping': 'Needs Scoping'
+    }
+    
+    const statusOrder = ['To Do', 'In Progress', 'Done', 'Needs Scoping']
+    const statusColors = {
+      'To Do': '#3b82f6',
+      'In Progress': '#f59e0b', 
+      'Done': '#10b981',
+      'Needs Scoping': '#14b8a6'
+    }
+    
+    // Group statuses by normalized names
+    const normalizedStatusCount: { [key: string]: number } = {}
+    Object.entries(statusCount).forEach(([status, count]) => {
+      const normalizedStatus = statusMapping[status] || status
+      normalizedStatusCount[normalizedStatus] = (normalizedStatusCount[normalizedStatus] || 0) + count
+    })
+    
+    return statusOrder
+      .filter(status => normalizedStatusCount[status] > 0)
+      .map(status => ({
+        name: status,
+        value: normalizedStatusCount[status],
+        color: statusColors[status as keyof typeof statusColors] || '#06b6d4'
+      }))
   }, [projects])
 
   // Generate project stats
@@ -140,14 +255,20 @@ function IndexPage() {
           title="Sprint Tasks"
           value={dashboardStats.totalTickets}
           icon={Clock}
-          color="bg-purple-500"
+          color="bg-teal-500"
         />
       </div>
 
       {/* Task Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <ChartCard title="Tasks by Priority" data={mockPriorityData} />
-        <ChartCard title="Tasks by Status" data={mockStatusData} />
+        <ChartCard 
+          title="Tasks by Priority" 
+          data={loading ? [] : taskPriorityData} 
+        />
+        <ChartCard 
+          title="Tasks by Status" 
+          data={loading ? [] : taskStatusData} 
+        />
       </div>
 
       {/* Project Stats */}

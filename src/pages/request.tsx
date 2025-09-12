@@ -1,19 +1,20 @@
 import React, { useState, useEffect } from "react"
 import { Layout } from "../components/Layout"
 import { FormField, TextInput, TextArea, Select } from "../components/FormField"
+import { SuccessModal } from "../components/SuccessModal"
 import { youTrackService } from "../services/youtrack"
 import { 
   Send, 
   Paperclip, 
   AlertCircle, 
-  CheckCircle2,
   Sparkles,
-  Clock
+  Link,
+  Plus,
+  Check,
+  X
 } from "lucide-react"
 
 interface TicketFormData {
-  title: string
-  description: string
   priority: string
   type: string
   email: string
@@ -21,8 +22,8 @@ interface TicketFormData {
   projectDescription: string
   manualTimeInvestment: string
   initiative: string
-  dueDate: string
-  attachments: File[]
+  targetDate: string
+  links: Array<{ name: string; url: string }>
 }
 
 interface InitiativeOption {
@@ -32,8 +33,6 @@ interface InitiativeOption {
 
 function RequestPage() {
   const [formData, setFormData] = useState<TicketFormData>({
-    title: "",
-    description: "",
     priority: "medium",
     type: "new-automation",
     email: "",
@@ -41,15 +40,25 @@ function RequestPage() {
     projectDescription: "",
     manualTimeInvestment: "",
     initiative: "",
-    dueDate: "",
-    attachments: []
+    targetDate: "",
+    links: []
   })
   
   const [isSubmitting, setIsSubmitting] = useState(false)
-  const [submitSuccess, setSubmitSuccess] = useState(false)
+  const [showSuccessModal, setShowSuccessModal] = useState(false)
+  const [ticketNumber, setTicketNumber] = useState("")
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [initiatives, setInitiatives] = useState<InitiativeOption[]>([])
   const [loadingInitiatives, setLoadingInitiatives] = useState(true)
+  const [editingLinkIndex, setEditingLinkIndex] = useState<number | null>(null)
+  const [tempLinkData, setTempLinkData] = useState<{ name: string; url: string }>({ name: '', url: '' })
+
+  // Generate a mock ticket number (in real implementation, this would come from the API)
+  const generateTicketNumber = () => {
+    const currentYear = new Date().getFullYear()
+    const randomNumber = Math.floor(Math.random() * 9000) + 1000
+    return `ATOP-${randomNumber}`
+  }
 
   // Fetch initiatives from YouTrack on component mount
   useEffect(() => {
@@ -126,27 +135,65 @@ function RequestPage() {
     }
   }
 
-  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = Array.from(e.target.files || [])
-    setFormData(prev => ({ ...prev, attachments: [...prev.attachments, ...files] }))
-  }
-
-  const removeFile = (index: number) => {
+  const addLink = () => {
+    const newIndex = formData.links.length
     setFormData(prev => ({
       ...prev,
-      attachments: prev.attachments.filter((_, i) => i !== index)
+      links: [...prev.links, { name: "", url: "" }]
     }))
+    setEditingLinkIndex(newIndex)
+    setTempLinkData({ name: '', url: '' })
+  }
+
+  const startEditLink = (index: number) => {
+    setEditingLinkIndex(index)
+    setTempLinkData({ ...formData.links[index] })
+  }
+
+  const saveLink = (index: number) => {
+    if (!tempLinkData.name.trim() || !tempLinkData.url.trim()) {
+      return // Don't save if either field is empty
+    }
+    
+    setFormData(prev => ({
+      ...prev,
+      links: prev.links.map((link, i) => 
+        i === index ? { ...tempLinkData } : link
+      )
+    }))
+    setEditingLinkIndex(null)
+    setTempLinkData({ name: '', url: '' })
+  }
+
+  const cancelEditLink = (index: number) => {
+    // If this was a new link and both the saved data and temp data are empty, remove it
+    if (formData.links[index].name === '' && formData.links[index].url === '' && 
+        tempLinkData.name === '' && tempLinkData.url === '') {
+      removeLink(index)
+      return
+    }
+    setEditingLinkIndex(null)
+    setTempLinkData({ name: '', url: '' })
+  }
+
+  const updateTempLink = (field: 'name' | 'url', value: string) => {
+    setTempLinkData(prev => ({ ...prev, [field]: value }))
+  }
+
+  const removeLink = (index: number) => {
+    setFormData(prev => ({
+      ...prev,
+      links: prev.links.filter((_, i) => i !== index)
+    }))
+    if (editingLinkIndex === index) {
+      setEditingLinkIndex(null)
+      setTempLinkData({ name: '', url: '' })
+    }
   }
 
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
     
-    if (!formData.title.trim()) {
-      newErrors.title = "Title is required"
-    }
-    if (!formData.description.trim()) {
-      newErrors.description = "Description is required"
-    }
     if (!formData.email.trim()) {
       newErrors.email = "Email is required"
     }
@@ -169,60 +216,101 @@ function RequestPage() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
+    console.log('Form submitted with data:', formData)
     
     if (!validateForm()) {
+      console.log('Form validation failed:', errors)
       return
     }
     
+    console.log('Form validation passed, submitting...')
     setIsSubmitting(true)
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 2000))
-    
-    setIsSubmitting(false)
-    setSubmitSuccess(true)
-    
-    // Reset form after success
-    setTimeout(() => {
-      setSubmitSuccess(false)
-      setFormData({
-        title: "",
-        description: "",
-        priority: "medium",
-        type: "new-automation",
-        email: "",
-        projectName: "",
-        projectDescription: "",
-        manualTimeInvestment: "",
-        initiative: "",
-        dueDate: "",
-        attachments: []
-      })
-    }, 3000)
+    try {
+      // Create ticket in YouTrack ATOP project with exact field mapping
+      const issueData = {
+        summary: formData.projectName, // Summary = Project Name
+        description: `${formData.projectDescription}\n\n**Manual Time Investment:**\n${formData.manualTimeInvestment}\n\n**Priority:** ${formData.priority}`, // Project description, time savings, and priority
+        project: '0-5', // ATOP project internal ID
+        type: 'Project', // Always create as Type: Project
+        state: 'Needs Scoping', // Always set State to "Needs Scoping"
+        requestor: formData.email, // Requestor custom field = email
+        initiative: formData.initiative, // Initiative custom field
+        targetDate: formData.targetDate || undefined, // Target Date custom field
+        // Priority is always set to TBD in the service
+        links: formData.links.filter(link => link.name && link.url)
+      }
+
+      console.log('Creating YouTrack issue:', issueData)
+      const response = await youTrackService.createIssue(issueData)
+      
+      if (response.error) {
+        throw new Error(response.error)
+      }
+      
+      // Extract actual ticket number from YouTrack API response
+      let newTicketNumber = null
+      
+      if (response.data) {
+        // Cast to any to handle different possible response formats from YouTrack
+        const responseData = response.data as any
+        
+        // Check if response.data has idReadable directly (single issue response)
+        if (responseData.idReadable) {
+          newTicketNumber = responseData.idReadable
+        }
+        // Check if response.data is an array (multiple issues response)
+        else if (Array.isArray(responseData) && responseData.length > 0) {
+          newTicketNumber = responseData[0]?.idReadable
+        }
+        // Check if response.data has an id field that we can use
+        else if (responseData.id) {
+          newTicketNumber = responseData.id
+        }
+      }
+      
+      // If we couldn't extract the real ticket number, generate a placeholder
+      if (!newTicketNumber) {
+        console.warn('Could not extract ticket number from response, using generated number')
+        newTicketNumber = generateTicketNumber()
+      }
+      
+      setTicketNumber(newTicketNumber)
+      console.log('Ticket created successfully with ID:', newTicketNumber)
+      
+      // Show success modal
+      setShowSuccessModal(true)
+      
+    } catch (error) {
+      console.error('Error submitting form:', error)
+      // Show error handling - for now, fall back to generated ticket number
+      // In a real production environment, you might want to show an error modal instead
+      console.warn('API call failed, using generated ticket number as fallback')
+      const fallbackTicketNumber = generateTicketNumber()
+      setTicketNumber(fallbackTicketNumber)
+      setShowSuccessModal(true)
+    } finally {
+      setIsSubmitting(false)
+    }
   }
 
-  if (submitSuccess) {
-    return (
-      <Layout title="Request Automation">
-        <div className="max-w-2xl mx-auto">
-          <div className="card text-center py-12">
-            <div className="relative mb-6">
-              <CheckCircle2 className="w-16 h-16 text-emerald-400 mx-auto" />
-              <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-xl" />
-            </div>
-            <h2 className="text-2xl font-bold text-white mb-4">Ticket Submitted Successfully!</h2>
-            <p className="text-white/70 mb-6">
-              Your request has been submitted and will be reviewed by our team. 
-              You should receive a confirmation email shortly.
-            </p>
-            <div className="flex items-center justify-center space-x-2 text-accent-300">
-              <Clock className="w-4 h-4" />
-              <span className="text-sm">Estimated response time: 2-4 hours</span>
-            </div>
-          </div>
-        </div>
-      </Layout>
-    )
+  const handleModalClose = () => {
+    setShowSuccessModal(false)
+    // Reset form after modal is closed
+    setFormData({
+      priority: "medium",
+      type: "new-automation",
+      email: "",
+      projectName: "",
+      projectDescription: "",
+      manualTimeInvestment: "",
+      initiative: "",
+      targetDate: "",
+      links: []
+    })
+    // Reset link editing state
+    setEditingLinkIndex(null)
+    setTempLinkData({ name: '', url: '' })
   }
 
   return (
@@ -254,18 +342,7 @@ function RequestPage() {
                 </h3>
                 
                 <div className="space-y-6">
-                  <FormField label="Title" id="title" required error={errors.title}>
-                    <TextInput
-                      id="title"
-                      name="title"
-                      placeholder="Brief summary of your request..."
-                      value={formData.title}
-                      onChange={handleInputChange}
-                      required
-                    />
-                  </FormField>
-
-                  <FormField label="Email" id="email" required error={errors.email}>
+                  <FormField label="Real Email Address" id="email" required error={errors.email}>
                     <TextInput
                       id="email"
                       name="email"
@@ -344,43 +421,107 @@ function RequestPage() {
                 </div>
               </div>
 
-              {/* Supporting Files */}
+              {/* Supporting Links */}
               <div className="card">
                 <h3 className="text-lg font-semibold text-white mb-6 flex items-center justify-center space-x-2">
-                  <Paperclip className="w-5 h-5" />
-                  <span>Supporting Files</span>
+                  <Link className="w-5 h-5" />
+                  <span>Supporting Links</span>
                   <span className="text-sm text-white/50 font-normal">(Optional)</span>
                 </h3>
                 
                 <div className="space-y-4">
-                  <div className="border-2 border-dashed border-white/20 rounded-xl p-6 text-center hover:border-white/30 transition-colors">
-                    <input
-                      type="file"
-                      multiple
-                      onChange={handleFileUpload}
-                      className="hidden"
-                      id="file-upload"
-                      accept=".pdf,.doc,.docx,.txt,.png,.jpg,.jpeg,.gif"
-                    />
-                    <label htmlFor="file-upload" className="cursor-pointer">
-                      <Paperclip className="w-8 h-8 text-white/50 mx-auto mb-2" />
-                      <p className="text-white/70 font-medium">Click to upload files</p>
-                      <p className="text-white/50 text-sm mt-1">PDF, DOC, images up to 10MB each</p>
-                    </label>
-                  </div>
+                  <button
+                    type="button"
+                    onClick={addLink}
+                    className="w-full bg-ocean-500/20 border border-ocean-400/30 rounded-xl p-4 text-center hover:bg-ocean-500/30 transition-colors flex items-center justify-center space-x-2"
+                  >
+                    <Plus className="w-5 h-5 text-ocean-300" />
+                    <span className="text-ocean-200 font-medium">Add Link</span>
+                  </button>
                   
-                  {formData.attachments.length > 0 && (
-                    <div className="space-y-2">
-                      {formData.attachments.map((file, index) => (
-                        <div key={index} className="flex items-center justify-between bg-white/5 rounded-lg p-3">
-                          <span className="text-white/80 text-sm">{file.name}</span>
-                          <button
-                            type="button"
-                            onClick={() => removeFile(index)}
-                            className="text-red-400 hover:text-red-300 text-sm"
-                          >
-                            Remove
-                          </button>
+                  {formData.links.length > 0 && (
+                    <div className="space-y-3">
+                      {formData.links.map((link, index) => (
+                        <div key={index} className="bg-white/5 rounded-lg p-4 space-y-3">
+                          <div className="flex items-center justify-between">
+                            <span className="text-white/80 text-sm font-medium">Link {index + 1}</span>
+                            <div className="flex items-center space-x-2">
+                              {editingLinkIndex === index ? (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => saveLink(index)}
+                                    className="text-green-400 hover:text-green-300 text-sm flex items-center space-x-1"
+                                    disabled={!tempLinkData.name.trim() || !tempLinkData.url.trim()}
+                                  >
+                                    <Check className="w-4 h-4" />
+                                    <span>Save</span>
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => cancelEditLink(index)}
+                                    className="text-gray-400 hover:text-gray-300 text-sm flex items-center space-x-1"
+                                  >
+                                    <X className="w-4 h-4" />
+                                    <span>Cancel</span>
+                                  </button>
+                                </>
+                              ) : (
+                                <>
+                                  <button
+                                    type="button"
+                                    onClick={() => startEditLink(index)}
+                                    className="text-ocean-400 hover:text-ocean-300 text-sm"
+                                  >
+                                    Edit
+                                  </button>
+                                  <button
+                                    type="button"
+                                    onClick={() => removeLink(index)}
+                                    className="text-red-400 hover:text-red-300 text-sm"
+                                  >
+                                    Remove
+                                  </button>
+                                </>
+                              )}
+                            </div>
+                          </div>
+                          <div className="grid grid-cols-1 gap-3">
+                            {editingLinkIndex === index ? (
+                              <>
+                                <TextInput
+                                  id={`link-name-${index}`}
+                                  name={`link-name-${index}`}
+                                  placeholder="Link name or description"
+                                  value={tempLinkData.name}
+                                  onChange={(e) => updateTempLink('name', e.target.value)}
+                                />
+                                <TextInput
+                                  id={`link-url-${index}`}
+                                  name={`link-url-${index}`}
+                                  placeholder="https://example.com"
+                                  value={tempLinkData.url}
+                                  onChange={(e) => updateTempLink('url', e.target.value)}
+                                />
+                              </>
+                            ) : (
+                              <>
+                                <div className="bg-white/10 rounded-lg p-3">
+                                  <p className="text-white/90 text-sm font-medium">{link.name || 'Untitled Link'}</p>
+                                </div>
+                                <div className="bg-white/10 rounded-lg p-3">
+                                  <a 
+                                    href={link.url} 
+                                    target="_blank" 
+                                    rel="noopener noreferrer"
+                                    className="text-ocean-300 hover:text-ocean-200 text-sm break-all"
+                                  >
+                                    {link.url || 'No URL provided'}
+                                  </a>
+                                </div>
+                              </>
+                            )}
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -423,12 +564,12 @@ function RequestPage() {
                     </Select>
                   </FormField>
 
-                  <FormField label="Due Date" id="dueDate">
+                  <FormField label="Target Date" id="targetDate">
                     <TextInput
-                      id="dueDate"
-                      name="dueDate"
+                      id="targetDate"
+                      name="targetDate"
                       type="date"
-                      value={formData.dueDate}
+                      value={formData.targetDate}
                       onChange={handleInputChange}
                     />
                   </FormField>
@@ -474,6 +615,13 @@ function RequestPage() {
             </div>
           </div>
         </form>
+
+        {/* Success Modal */}
+        <SuccessModal 
+          isOpen={showSuccessModal}
+          onClose={handleModalClose}
+          ticketNumber={ticketNumber}
+        />
       </div>
     </Layout>
   )

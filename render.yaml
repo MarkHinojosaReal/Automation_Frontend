@@ -1,0 +1,13 @@
+services:
+  - type: web
+    name: youtrack-dashboard
+    env: node
+    buildCommand: npm install && npm run build
+    startCommand: npm start
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: YOUTRACK_BASE_URL
+        value: https://realbrokerage.youtrack.cloud
+      - key: YOUTRACK_TOKEN
+        sync: false # This will be set manually in Render dashboard for security

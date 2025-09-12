@@ -40,12 +40,16 @@ class YouTrackService {
 
   constructor() {
     this.config = {
-      proxyUrl: process.env.GATSBY_PROXY_URL || 'https://youtrack-proxy.onrender.com',
-      useProxy: true // Always use proxy for CORS handling
+      proxyUrl: process.env.GATSBY_PROXY_URL || (
+        process.env.NODE_ENV === 'development' 
+          ? 'http://localhost:3001'
+          : (typeof window !== 'undefined' ? window.location.origin : '')
+      ),
+      useProxy: true // Always use proxy in this setup
     }
   }
 
-  private async makeRequest(endpoint: string, params?: Record<string, string>): Promise<YouTrackApiResponse> {
+  private async makeRequest(endpoint: string, params?: Record<string, string>, method: string = 'GET', body?: any): Promise<YouTrackApiResponse> {
     try {
       let url: string
       
@@ -76,14 +80,20 @@ class YouTrackService {
 
       // Only add auth header for direct API calls
       if (!this.config.useProxy) {
-        const token = process.env.GATSBY_YOUTRACK_TOKEN || 'perm-bWFyay5oaW5vam9zYQ==.NTktMTU4.0k4Ad1tAdROERwu5cBfYRMdUcDS6T3'
+        const token = process.env.GATSBY_YOUTRACK_TOKEN || 'perm-T3Bz.NTktMTYx.pbpLPTlaXss6AQjl0F1tXn7q4Cl4a8'
         headers['Authorization'] = `Bearer ${token}`
       }
 
-      const response = await fetch(url, {
-        method: 'GET',
+      const fetchOptions: RequestInit = {
+        method,
         headers
-      })
+      }
+
+      if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
+        fetchOptions.body = JSON.stringify(body)
+      }
+
+      const response = await fetch(url, fetchOptions)
 
       if (!response.ok) {
         const errorText = await response.text()
@@ -131,9 +141,19 @@ class YouTrackService {
     const fieldsParam = fields.join(',')
     
     if (this.config.useProxy) {
-      return this.makeRequest(`/issues/${issueId}`, { fields: fieldsParam })
+      const response = await this.makeRequest(`/issues/${issueId}`, { fields: fieldsParam })
+      // Handle both array responses and single issue responses
+      if (response.data && !Array.isArray(response.data)) {
+        return { data: response.data }
+      }
+      return response
     } else {
-      return this.makeRequest(`/issues/${issueId}`, { fields: fieldsParam })
+      const response = await this.makeRequest(`/issues/${issueId}`, { fields: fieldsParam })
+      // Handle both array responses and single issue responses  
+      if (response.data && !Array.isArray(response.data)) {
+        return { data: response.data }
+      }
+      return response
     }
   }
 
@@ -157,6 +177,21 @@ class YouTrackService {
     return this.getProjectCustomFieldValues('ATOP', fieldName)
   }
 
+  async getAllProjectCustomFields(projectId: string = 'ATOP'): Promise<YouTrackApiResponse> {
+    try {
+      if (this.config.useProxy) {
+        return this.makeRequest(`/projects/${projectId}/custom-fields`)
+      } else {
+        return this.makeRequest(`/admin/projects/${projectId}/customFields`, { 
+          fields: 'id,field(id,name,fieldType(id,name)),bundle(values(name))' 
+        })
+      }
+    } catch (error) {
+      console.error('Failed to fetch all custom fields:', error)
+      return { error: error instanceof Error ? error.message : 'Failed to fetch all custom fields' }
+    }
+  }
+
   async getProjectIssues(): Promise<YouTrackApiResponse> {
     const fields = 'idReadable,summary,description,created,updated,reporter(name,email),assignee(name,email),customFields(name,value(name)),state(name)'
     const query = 'project:ATOP Type:Project' // Filter for issues with type "Project" from ATOP project only
@@ -165,6 +200,107 @@ class YouTrackService {
       return this.makeRequest('/issues', { fields, query, top: '100' })
     } else {
       return this.makeRequest('/issues', { fields, query, '$top': '100' })
+    }
+  }
+
+  async createIssue(issueData: {
+    summary: string
+    description: string
+    project: string
+    type?: string
+    state?: string
+    requestor?: string
+    initiative?: string
+    targetDate?: string
+    priority?: string
+    links?: Array<{ name: string; url: string }>
+  }): Promise<YouTrackApiResponse> {
+    try {
+      const payload = {
+        project: { id: issueData.project },
+        summary: issueData.summary,
+        description: issueData.description,
+        customFields: [
+          // Always set Type to "Project"
+          { 
+            "name": "Type", 
+            "$type": "SingleEnumIssueCustomField", 
+            "value": { "name": "Project" } 
+          },
+          // Always set State to "Needs Scoping"
+          { 
+            "name": "State", 
+            "$type": "SingleEnumIssueCustomField", 
+            "value": { "name": "Needs Scoping" } 
+          },
+          // Set Priority to always be TBD
+          {
+            "name": "Priority", 
+            "$type": "SingleEnumIssueCustomField",
+            "value": { "name": "TBD" }
+          },
+          // Set Initiative from form selection
+          ...(issueData.initiative ? [{
+            "name": "Initiative",
+            "$type": "SingleEnumIssueCustomField",
+            "value": { "name": this.getInitiativeDisplayName(issueData.initiative) }
+          }] : []),
+          // Set Target Date - uses timestamp format
+          ...(issueData.targetDate ? [{
+            "name": "Target Date",
+            "$type": "DateIssueCustomField",
+            "value": new Date(issueData.targetDate).getTime()
+          }] : []),
+          // Set Requestor from email - SingleUserIssueCustomField expects user login
+          ...(issueData.requestor ? [{
+            "name": "Requestor",
+            "$type": "SingleUserIssueCustomField",
+            "value": { "login": this.extractLoginFromEmail(issueData.requestor) }
+          }] : []),
+          // Set Supporting Documents from links in markdown format
+          ...(issueData.links && issueData.links.length > 0 ? [{
+            "name": "Supporting Documents",
+            "$type": "TextIssueCustomField",
+            "value": {
+              "$type": "TextFieldValue",
+              "text": this.formatLinksAsMarkdown(issueData.links)
+            }
+          }] : [])
+        ]
+      }
+
+      // Links are now handled in Supporting Documents custom field
+
+      console.log('Creating issue with payload:', payload)
+
+      let result
+      if (this.config.useProxy) {
+        result = await this.makeRequest('/issues', {}, 'POST', payload)
+      } else {
+        result = await this.makeRequest('/issues', {}, 'POST', payload)
+      }
+
+      // If ticket was created successfully, fetch the readable ID
+      if (result.data && (result.data as any).id) {
+        const internalId = (result.data as any).id
+        console.log('Ticket created with internal ID:', internalId)
+        
+        // Fetch the ticket details to get the readable ID
+        const ticketDetails = await this.getIssueById(internalId, ['idReadable'])
+        if (ticketDetails.data && (ticketDetails.data as any).idReadable) {
+          // Replace the internal response with readable ID
+          result.data = {
+            ...(result.data as any),
+            idReadable: (ticketDetails.data as any).idReadable
+          } as any
+          console.log('Readable ticket ID:', (ticketDetails.data as any).idReadable)
+        }
+      }
+
+      return result
+    } catch (error) {
+      console.error('Error creating issue:', error)
+      return { error: error instanceof Error ? error.message : 'Failed to create issue' }
     }
   }
 
@@ -187,7 +323,15 @@ class YouTrackService {
       email: `${assigneeField.value.name.toLowerCase().replace(/\s+/g, '.')}@therealbrokerage.com`
     } : null
 
-    // Extract reporter from YouTrack response
+    // Extract requestor from custom fields (for ATOP projects, this is the actual requestor)
+    const requestorField = issue.customFields?.find(field => field.name === 'Requestor')
+    const requestor = requestorField?.value?.name ? {
+      id: requestorField.value.name.toLowerCase().replace(/\s+/g, '.'),
+      name: requestorField.value.name,
+      email: `${requestorField.value.name.toLowerCase().replace(/\s+/g, '.')}@therealbrokerage.com`
+    } : null
+
+    // Extract reporter from YouTrack response (this is who created the ticket)
     const reporter = issue.reporter ? {
       id: issue.reporter.email || issue.reporter.name.toLowerCase().replace(/\s+/g, '.'),
       name: issue.reporter.name,
@@ -229,6 +373,7 @@ class YouTrackService {
         shortName: issue.idReadable.split('-')[0]
       },
       reporter,
+      requestor,
       assignee,
       priority,
       state,
@@ -272,6 +417,55 @@ class YouTrackService {
       default:
         return '#6366f1'
     }
+  }
+
+  private getInitiativeDisplayName(initiativeValue: string): string {
+    const initiativeMap: Record<string, string> = {
+      'infrastructure': 'Infrastructure',
+      'offboarding': 'Offboarding',
+      'onboarding': 'Onboarding',
+      'transactions': 'Transactions',
+      'enablement': 'Enablement',
+      'support': 'Support',
+      'brokerage': 'Brokerage',
+      'core-operations': 'Core Operations',
+      'zapier-support': 'Zapier Support',
+      'marketing': 'Marketing',
+      'legal': 'Legal',
+      'hr': 'HR',
+      'finance': 'Finance'
+    }
+    
+    return initiativeMap[initiativeValue] || initiativeValue
+  }
+
+  private getPriorityDisplayName(priorityValue: string): string {
+    const priorityMap: Record<string, string> = {
+      'low': '3 - Low',
+      'medium': '2 - Medium', 
+      'high': '1 - High',
+      'critical': '0 - Urgent'
+    }
+    
+    return priorityMap[priorityValue] || priorityValue
+  }
+
+  private extractLoginFromEmail(email: string): string {
+    // Extract username from email address (everything before @)
+    return email.split('@')[0]
+  }
+
+  private formatLinksAsMarkdown(links: Array<{ name: string; url: string }>): string {
+    // Filter out empty links and format as markdown
+    const validLinks = links.filter(link => link.name.trim() && link.url.trim())
+    
+    if (validLinks.length === 0) {
+      return ''
+    }
+
+    return validLinks
+      .map(link => `**${link.name}**\n${link.url}`)
+      .join('\n\n')
   }
 }
 

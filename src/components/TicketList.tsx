@@ -1,6 +1,6 @@
 import React, { useState } from "react"
 import { TicketCard } from "./TicketCard"
-import { Search, Filter, SortAsc } from "lucide-react"
+import { Search, Filter, SortAsc, ArrowUpDown } from "lucide-react"
 import type { Ticket } from "../types"
 
 interface TicketListProps {
@@ -15,6 +15,7 @@ export function TicketList({ tickets, compact = false, showFilters = false }: Ti
   const [priorityFilter, setPriorityFilter] = useState("all")
   const [assigneeFilter, setAssigneeFilter] = useState("all")
   const [sortBy, setSortBy] = useState("updated")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
 
   // Extract unique values from tickets for dynamic filters
   const uniqueStates = Array.from(new Set(tickets.map(ticket => ticket.state.name))).sort()
@@ -34,18 +35,25 @@ export function TicketList({ tickets, compact = false, showFilters = false }: Ti
       return matchesSearch && matchesState && matchesPriority && matchesAssignee
     })
     .sort((a, b) => {
+      let comparison = 0
+      
       switch (sortBy) {
         case "created":
-          return b.created - a.created
+          comparison = a.created - b.created
+          break
         case "updated":
-          return b.updated - a.updated
+          comparison = a.updated - b.updated
+          break
         case "priority":
-          const priorityOrder = { "High": 3, "Medium": 2, "Low": 1 }
-          return (priorityOrder[b.priority.name as keyof typeof priorityOrder] || 0) - 
-                 (priorityOrder[a.priority.name as keyof typeof priorityOrder] || 0)
+          const priorityOrder = { "Urgent": 5, "High": 4, "Medium": 3, "Low": 2, "TBD": 1 }
+          comparison = (priorityOrder[a.priority.name as keyof typeof priorityOrder] || 0) - 
+                      (priorityOrder[b.priority.name as keyof typeof priorityOrder] || 0)
+          break
         default:
-          return b.updated - a.updated
+          comparison = a.updated - b.updated
       }
+      
+      return sortOrder === "desc" ? -comparison : comparison
     })
 
   if (tickets.length === 0) {
@@ -112,7 +120,7 @@ export function TicketList({ tickets, compact = false, showFilters = false }: Ti
             </select>
 
             <div className="flex items-center space-x-2">
-              <SortAsc className="w-4 h-4 text-white/50" />
+              <ArrowUpDown className="w-4 h-4 text-white/50" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -121,6 +129,14 @@ export function TicketList({ tickets, compact = false, showFilters = false }: Ti
                 <option value="updated">Last Updated</option>
                 <option value="created">Date Created</option>
                 <option value="priority">Priority</option>
+              </select>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+                className="input-glass px-3 py-2 text-sm text-white/90"
+              >
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
               </select>
             </div>
           </div>

@@ -30,14 +30,15 @@ if [ $? -eq 0 ]; then
 echo "📱 Frontend app: http://localhost:8000"
 echo "🔍 GraphiQL explorer: http://localhost:8000/___graphql"
 echo ""
-echo "🚨 CORS SOLUTION: Using Render proxy server"
-echo "💡 Frontend connects to https://youtrack-proxy.onrender.com for YouTrack API"
+echo "🚨 CORS SOLUTION: Using local proxy server"
+echo "💡 Starting both proxy server (port 3001) and Gatsby (port 8000)"
+echo "🔗 Proxy server health: http://localhost:3001/health"
 echo ""
-echo "Press Ctrl+C to stop the server"
+echo "Press Ctrl+C to stop both servers"
 echo ""
 
-# Start development server
-npm run develop
+# Start both proxy and Gatsby development servers
+npm run dev
 else
     echo "❌ Type check failed. Please fix the errors and try again."
     exit 1

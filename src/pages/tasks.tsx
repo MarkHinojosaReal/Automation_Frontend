@@ -32,7 +32,7 @@ function TicketsPage() {
     <Layout title="Tasks">
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-white">Current Sprint Tasks</h1>
+          <h1 className="text-2xl font-bold text-white">Current Tasks</h1>
           <p className="text-white/70 mt-1">
             Last Updated: {new Date().toLocaleDateString('en-US', {
               month: 'short',

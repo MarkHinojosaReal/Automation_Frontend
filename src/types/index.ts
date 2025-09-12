@@ -37,6 +37,7 @@ export interface Ticket {
   description?: string
   project: Project
   reporter: User
+  requestor?: User | null
   assignee?: User
   priority: TicketPriority
   state: TicketState

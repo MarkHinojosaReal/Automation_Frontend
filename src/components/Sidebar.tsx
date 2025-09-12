@@ -5,7 +5,9 @@ import {
   Ticket, 
   Folder,
   Bot,
-  Zap
+  Zap,
+  Play,
+  BookOpen
 } from "lucide-react"
 
 interface SidebarItemProps {
@@ -43,9 +45,10 @@ export function Sidebar() {
   const menuItems = [
     { to: "/", icon: <Home className="w-5 h-5" />, label: "Home" },
     { to: "/projects", icon: <Folder className="w-5 h-5" />, label: "Projects" },
-    { to: "/tickets", icon: <Ticket className="w-5 h-5" />, label: "Tasks" },
-    { to: "/automation-impact", icon: <Zap className="w-5 h-5" />, label: "Automation Impact" },
-    { to: "/request", icon: <Bot className="w-5 h-5" />, label: "Request Automation", accent: true }
+    { to: "/tasks", icon: <Ticket className="w-5 h-5" />, label: "Tasks" },
+    { to: "/tools", icon: <Play className="w-5 h-5" />, label: "Tools" },
+    { to: "/api-docs", icon: <BookOpen className="w-5 h-5" />, label: "API Docs" },
+    { to: "/request", icon: <Bot className="w-5 h-5" />, label: "New Request", accent: true }
   ]
 
   // Helper function to determine if a menu item is active

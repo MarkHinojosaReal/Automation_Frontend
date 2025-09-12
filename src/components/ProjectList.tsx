@@ -1,6 +1,6 @@
 import React, { useState } from "react"
 import { ProjectCard } from "./ProjectCard"
-import { Search, Filter, SortAsc } from "lucide-react"
+import { Search, Filter, SortAsc, ArrowUpDown } from "lucide-react"
 import type { Ticket } from "../types"
 
 interface ProjectListProps {
@@ -13,48 +13,66 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
   const [searchTerm, setSearchTerm] = useState("")
   const [stateFilter, setStateFilter] = useState("all")
   const [priorityFilter, setPriorityFilter] = useState("all")
-  const [assigneeFilter, setAssigneeFilter] = useState("all")
   const [requestorFilter, setRequestorFilter] = useState("all")
   const [initiativeFilter, setInitiativeFilter] = useState("all")
   const [sortBy, setSortBy] = useState("updated")
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
 
   // Extract unique values from projects for dynamic filters
   const uniqueStates = Array.from(new Set(projects.map(project => project.state.name))).sort()
   const uniquePriorities = Array.from(new Set(projects.map(project => project.priority.name))).sort()
-  const uniqueAssignees = Array.from(new Set(projects.filter(project => project.assignee).map(project => project.assignee!.name))).sort()
-  const uniqueRequestors = Array.from(new Set(projects.map(project => project.reporter.name))).sort()
+  const uniqueRequestors = Array.from(new Set(projects.map(project => project.requestor?.name || project.reporter.name))).sort()
   const uniqueInitiatives = Array.from(new Set(projects.filter(project => project.initiative).map(project => project.initiative!))).sort()
 
   const filteredProjects = projects
     .filter(project => {
       const matchesSearch = project.summary.toLowerCase().includes(searchTerm.toLowerCase()) ||
                           project.idReadable.toLowerCase().includes(searchTerm.toLowerCase()) ||
-                          (project.reporter.name && project.reporter.name.toLowerCase().includes(searchTerm.toLowerCase()))
+                          ((project.requestor?.name || project.reporter.name) && (project.requestor?.name || project.reporter.name).toLowerCase().includes(searchTerm.toLowerCase()))
       const matchesState = stateFilter === "all" || project.state.name === stateFilter
       const matchesPriority = priorityFilter === "all" || project.priority.name === priorityFilter
-      const matchesAssignee = assigneeFilter === "all" || 
-                             (assigneeFilter === "unassigned" && !project.assignee) ||
-                             (project.assignee && project.assignee.name === assigneeFilter)
-      const matchesRequestor = requestorFilter === "all" || project.reporter.name === requestorFilter
+      const matchesRequestor = requestorFilter === "all" || (project.requestor?.name || project.reporter.name) === requestorFilter
       const matchesInitiative = initiativeFilter === "all" ||
                                (initiativeFilter === "none" && !project.initiative) ||
                                (project.initiative && project.initiative === initiativeFilter)
       
-      return matchesSearch && matchesState && matchesPriority && matchesAssignee && matchesRequestor && matchesInitiative
+      return matchesSearch && matchesState && matchesPriority && matchesRequestor && matchesInitiative
     })
     .sort((a, b) => {
+      let comparison = 0
+      
       switch (sortBy) {
         case "created":
-          return b.created - a.created
+          comparison = Number(a.created) - Number(b.created)
+          break
         case "updated":
-          return b.updated - a.updated
+          comparison = Number(a.updated) - Number(b.updated)
+          break
         case "priority":
-          const priorityOrder = { "High": 3, "Medium": 2, "Low": 1 }
-          return (priorityOrder[b.priority.name as keyof typeof priorityOrder] || 0) - 
-                 (priorityOrder[a.priority.name as keyof typeof priorityOrder] || 0)
+          const priorityOrder = { "Urgent": 5, "High": 4, "Medium": 3, "Low": 2, "TBD": 1 }
+          
+          // Normalize priority names to match our order mapping
+          const normalizePriority = (priorityName: string): string => {
+            if (priorityName === '0 - Urgent') return 'Urgent'
+            if (priorityName === '1 - High') return 'High'
+            if (priorityName === '2 - Medium') return 'Medium'
+            if (priorityName === '3 - Low') return 'Low'
+            if (priorityName === 'TBD') return 'TBD'
+            // Remove any number prefix pattern like "4 - Something" -> "Something"
+            return priorityName.replace(/^\d+\s*-\s*/, '')
+          }
+          
+          const normalizedA = normalizePriority(a.priority.name)
+          const normalizedB = normalizePriority(b.priority.name)
+          
+          comparison = (priorityOrder[normalizedA as keyof typeof priorityOrder] || 0) - 
+                      (priorityOrder[normalizedB as keyof typeof priorityOrder] || 0)
+          break
         default:
-          return b.updated - a.updated
+          comparison = a.updated - b.updated
       }
+      
+      return sortOrder === "desc" ? -comparison : comparison
     })
 
   if (projects.length === 0) {
@@ -108,17 +126,6 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
               ))}
             </select>
 
-            <select
-              value={assigneeFilter}
-              onChange={(e) => setAssigneeFilter(e.target.value)}
-              className="input-glass px-3 py-2 text-sm text-white/90"
-            >
-              <option value="all">All Assignees</option>
-              <option value="unassigned">Unassigned</option>
-              {uniqueAssignees.map(assignee => (
-                <option key={assignee} value={assignee}>{assignee}</option>
-              ))}
-            </select>
 
             <select
               value={requestorFilter}
@@ -146,7 +153,7 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
             )}
 
             <div className="flex items-center space-x-2">
-              <SortAsc className="w-4 h-4 text-white/50" />
+              <ArrowUpDown className="w-4 h-4 text-white/50" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
@@ -155,6 +162,14 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
                 <option value="updated">Last Updated</option>
                 <option value="created">Date Created</option>
                 <option value="priority">Priority</option>
+              </select>
+              <select
+                value={sortOrder}
+                onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+                className="input-glass px-3 py-2 text-sm text-white/90"
+              >
+                <option value="desc">Descending</option>
+                <option value="asc">Ascending</option>
               </select>
             </div>
           </div>
