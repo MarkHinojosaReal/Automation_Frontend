@@ -14,6 +14,7 @@ export function TicketList({ tickets, compact = false, showFilters = false }: Ti
   const [stateFilter, setStateFilter] = useState("all")
   const [priorityFilter, setPriorityFilter] = useState("all")
   const [assigneeFilter, setAssigneeFilter] = useState("all")
+  const [initiativeFilter, setInitiativeFilter] = useState("all")
   const [sortBy, setSortBy] = useState("updated")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
 
@@ -21,6 +22,7 @@ export function TicketList({ tickets, compact = false, showFilters = false }: Ti
   const uniqueStates = Array.from(new Set(tickets.map(ticket => ticket.state.name))).sort()
   const uniquePriorities = Array.from(new Set(tickets.map(ticket => ticket.priority.name))).sort()
   const uniqueAssignees = Array.from(new Set(tickets.filter(ticket => ticket.assignee).map(ticket => ticket.assignee!.name))).sort()
+  const uniqueInitiatives = Array.from(new Set(tickets.filter(ticket => ticket.initiative).map(ticket => ticket.initiative!))).sort()
 
   const filteredTickets = tickets
     .filter(ticket => {
@@ -31,8 +33,11 @@ export function TicketList({ tickets, compact = false, showFilters = false }: Ti
       const matchesAssignee = assigneeFilter === "all" || 
                              (assigneeFilter === "unassigned" && !ticket.assignee) ||
                              (ticket.assignee && ticket.assignee.name === assigneeFilter)
+      const matchesInitiative = initiativeFilter === "all" ||
+                               (initiativeFilter === "none" && !ticket.initiative) ||
+                               (ticket.initiative && ticket.initiative === initiativeFilter)
       
-      return matchesSearch && matchesState && matchesPriority && matchesAssignee
+      return matchesSearch && matchesState && matchesPriority && matchesAssignee && matchesInitiative
     })
     .sort((a, b) => {
       let comparison = 0
@@ -59,7 +64,7 @@ export function TicketList({ tickets, compact = false, showFilters = false }: Ti
   if (tickets.length === 0) {
     return (
       <div className="text-center py-12">
-        <p className="text-white/60">No tasks found.</p>
+        <p className="text-breeze-600">No tasks found.</p>
       </div>
     )
   }
@@ -68,26 +73,14 @@ export function TicketList({ tickets, compact = false, showFilters = false }: Ti
     <div>
       {showFilters && (
         <div className="mb-6 space-y-4">
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-white/50 w-4 h-4" />
-            <input
-              type="text"
-              placeholder="Search tasks..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="input-glass pl-10 pr-4 w-full text-white/90 placeholder-white/50"
-            />
-          </div>
-
           {/* Filters */}
           <div className="flex flex-wrap gap-4">
             <div className="flex items-center space-x-2">
-              <Filter className="w-4 h-4 text-white/50" />
+              <Filter className="w-4 h-4 text-breeze-500" />
               <select
                 value={stateFilter}
                 onChange={(e) => setStateFilter(e.target.value)}
-                className="input-glass px-3 py-2 text-sm text-white/90"
+                className="input-glass px-3 py-2 text-sm text-breeze-800"
               >
                 <option value="all">All States</option>
                 {uniqueStates.map(state => (
@@ -99,7 +92,7 @@ export function TicketList({ tickets, compact = false, showFilters = false }: Ti
             <select
               value={priorityFilter}
               onChange={(e) => setPriorityFilter(e.target.value)}
-              className="input-glass px-3 py-2 text-sm text-white/90"
+              className="input-glass px-3 py-2 text-sm text-breeze-800"
             >
               <option value="all">All Priorities</option>
               {uniquePriorities.map(priority => (
@@ -110,7 +103,7 @@ export function TicketList({ tickets, compact = false, showFilters = false }: Ti
             <select
               value={assigneeFilter}
               onChange={(e) => setAssigneeFilter(e.target.value)}
-              className="input-glass px-3 py-2 text-sm text-white/90"
+              className="input-glass px-3 py-2 text-sm text-breeze-800"
             >
               <option value="all">All Assignees</option>
               <option value="unassigned">Unassigned</option>
@@ -119,12 +112,26 @@ export function TicketList({ tickets, compact = false, showFilters = false }: Ti
               ))}
             </select>
 
+            {uniqueInitiatives.length > 0 && (
+              <select
+                value={initiativeFilter}
+                onChange={(e) => setInitiativeFilter(e.target.value)}
+                className="input-glass px-3 py-2 text-sm text-breeze-800"
+              >
+                <option value="all">All Initiatives</option>
+                <option value="none">No Initiative</option>
+                {uniqueInitiatives.map(initiative => (
+                  <option key={initiative} value={initiative}>{initiative}</option>
+                ))}
+              </select>
+            )}
+
             <div className="flex items-center space-x-2">
-              <ArrowUpDown className="w-4 h-4 text-white/50" />
+              <ArrowUpDown className="w-4 h-4 text-breeze-500" />
               <select
                 value={sortBy}
                 onChange={(e) => setSortBy(e.target.value)}
-                className="input-glass px-3 py-2 text-sm text-white/90"
+                className="input-glass px-3 py-2 text-sm text-breeze-800"
               >
                 <option value="updated">Last Updated</option>
                 <option value="created">Date Created</option>
@@ -133,12 +140,24 @@ export function TicketList({ tickets, compact = false, showFilters = false }: Ti
               <select
                 value={sortOrder}
                 onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
-                className="input-glass px-3 py-2 text-sm text-white/90"
+                className="input-glass px-3 py-2 text-sm text-breeze-800"
               >
                 <option value="desc">Descending</option>
                 <option value="asc">Ascending</option>
               </select>
             </div>
+          </div>
+          
+          {/* Search */}
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-breeze-500 w-4 h-4" />
+            <input
+              type="text"
+              placeholder="Search tasks..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="input-glass pl-10 pr-4 w-full text-breeze-800 placeholder-breeze-500"
+            />
           </div>
         </div>
       )}
@@ -152,7 +171,7 @@ export function TicketList({ tickets, compact = false, showFilters = false }: Ti
 
       {filteredTickets.length === 0 && tickets.length > 0 && (
         <div className="text-center py-12">
-          <p className="text-white/60">No tasks match your current filters.</p>
+          <p className="text-breeze-600">No tasks match your current filters.</p>
         </div>
       )}
     </div>

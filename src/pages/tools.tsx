@@ -105,8 +105,8 @@ function ToolsPage() {
                 <Database className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white">Metabase Card Inspector</h1>
-                <p className="text-white/70 mt-1">
+                <h1 className="text-3xl font-bold text-breeze-800">Metabase Card Inspector</h1>
+                <p className="text-breeze-600 mt-1">
                   Enter a Metabase card ID to inspect its SQL query and column metadata
                 </p>
               </div>
@@ -118,7 +118,7 @@ function ToolsPage() {
             <div className="space-y-4">
               <div className="flex space-x-4">
                 <div className="flex-1">
-                  <label htmlFor="cardId" className="block text-sm font-medium text-white/80 mb-2">
+                  <label htmlFor="cardId" className="block text-sm font-medium text-breeze-700 mb-2">
                     Card ID
                   </label>
                   <input
@@ -161,7 +161,7 @@ function ToolsPage() {
               {inspectorResult && (
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-medium text-white">Inspection Result</h4>
+                    <h4 className="font-medium text-breeze-800">Inspection Result</h4>
                     <button
                       onClick={() => copyToClipboard(inspectorResult)}
                       className="flex items-center space-x-1 text-sm text-purple-300 hover:text-purple-200 transition-colors"
@@ -171,7 +171,7 @@ function ToolsPage() {
                     </button>
                   </div>
                   <div className="bg-gray-900/50 border border-white/10 rounded-lg p-4">
-                    <pre className="text-sm text-white/90 whitespace-pre-wrap overflow-x-auto">
+                    <pre className="text-sm text-breeze-800 whitespace-pre-wrap overflow-x-auto">
                       {inspectorResult}
                     </pre>
                   </div>
@@ -187,21 +187,6 @@ function ToolsPage() {
   return (
     <Layout title="Tools Directory">
       <div className="max-w-6xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="p-3 bg-gradient-to-br from-accent-400 to-accent-600 rounded-xl shadow-lg">
-              <Grid3X3 className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Tools Directory</h1>
-              <p className="text-white/70 mt-1">
-                Automation tools and utilities for data analysis and workflow optimization
-              </p>
-            </div>
-          </div>
-        </div>
-
         {/* Tools Grid */}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {tools.map((tool) => (
@@ -212,16 +197,16 @@ function ToolsPage() {
                 </div>
                 <span className={`px-2 py-1 text-xs rounded-full ${
                   tool.status === 'available' 
-                    ? 'bg-green-500/20 text-green-300' 
-                    : 'bg-yellow-500/20 text-yellow-300'
+                    ? 'bg-green-500/20 text-green-700' 
+                    : 'bg-yellow-500/20 text-yellow-700'
                 }`}>
                   {tool.status === 'available' ? 'Available' : 'Coming Soon'}
                 </span>
               </div>
               
               <div className="mb-4">
-                <h3 className="font-semibold text-white mb-2">{tool.name}</h3>
-                <p className="text-sm text-white/70 mb-3">{tool.description}</p>
+                <h3 className="font-semibold text-breeze-800 mb-2">{tool.name}</h3>
+                <p className="text-sm text-breeze-600 mb-3">{tool.description}</p>
                 <span className="text-xs text-accent-300 font-medium">{tool.category}</span>
               </div>
 
@@ -229,13 +214,13 @@ function ToolsPage() {
                 {tool.status === 'available' ? (
                   <button
                     onClick={tool.action}
-                    className="flex items-center space-x-2 text-purple-300 hover:text-purple-200 transition-colors"
+                    className="flex items-center space-x-2 text-purple-700 hover:text-purple-600 transition-colors"
                   >
                     <span>Open Tool</span>
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 ) : (
-                  <span className="text-white/50 text-sm">Coming Soon</span>
+                  <span className="text-breeze-500 text-sm">Coming Soon</span>
                 )}
                 
                 {tool.href && (
@@ -243,7 +228,7 @@ function ToolsPage() {
                     href={tool.href}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-white/50 hover:text-white/70 transition-colors"
+                    className="text-breeze-500 hover:text-breeze-400 transition-colors"
                   >
                     <ExternalLink className="w-4 h-4" />
                   </a>
@@ -251,18 +236,6 @@ function ToolsPage() {
               </div>
             </div>
           ))}
-        </div>
-
-        {/* Empty State for Future Tools */}
-        <div className="mt-8 text-center">
-          <div className="max-w-md mx-auto">
-            <p className="text-white/50 text-sm mb-4">
-              More tools are being developed to help automate your workflows.
-            </p>
-            <div className="text-xs text-white/30">
-              Have an idea for a tool? Let the automation team know!
-            </div>
-          </div>
         </div>
       </div>
     </Layout>

@@ -33,12 +33,12 @@ export function TicketCard({ ticket, compact = false }: TicketCardProps) {
     const normalizedPriority = normalizePriority(priorityName)
     
     switch (normalizedPriority) {
-      case 'Urgent': return "bg-red-600/20 text-red-200 border border-red-500/30"
-      case 'High': return "bg-red-500/20 text-red-200 border border-red-400/30"
-      case 'Medium': return "bg-yellow-500/20 text-yellow-200 border border-yellow-400/30"
-      case 'Low': return "bg-green-500/20 text-green-200 border border-green-400/30"
-      case 'TBD': return "bg-teal-500/20 text-teal-200 border border-teal-400/30"
-      default: return "bg-breeze-500/20 text-breeze-200 border border-breeze-400/30"
+      case 'Urgent': return "bg-red-600/20 text-red-800 border border-red-500/30"
+      case 'High': return "bg-red-500/20 text-red-700 border border-red-400/30"
+      case 'Medium': return "bg-yellow-500/20 text-yellow-800 border border-yellow-400/30"
+      case 'Low': return "bg-green-500/20 text-green-800 border border-green-400/30"
+      case 'TBD': return "bg-teal-500/20 text-teal-800 border border-teal-400/30"
+      default: return "bg-breeze-500/20 text-breeze-800 border border-breeze-400/30"
     }
   }
 
@@ -58,15 +58,15 @@ export function TicketCard({ ticket, compact = false }: TicketCardProps) {
     
     switch (normalizedStatus) {
       case 'To Do':
-        return "bg-blue-500/20 text-blue-200 border border-blue-400/30"
+        return "bg-blue-500/20 text-blue-800 border border-blue-400/30"
       case 'In Progress':
-        return "bg-yellow-500/20 text-yellow-200 border border-yellow-400/30"
+        return "bg-yellow-500/20 text-yellow-800 border border-yellow-400/30"
       case 'Done':
-        return "bg-green-500/20 text-green-200 border border-green-400/30"
+        return "bg-green-500/20 text-green-800 border border-green-400/30"
       case 'Needs Scoping':
-        return "bg-teal-500/20 text-teal-200 border border-teal-400/30"
+        return "bg-teal-500/20 text-teal-800 border border-teal-400/30"
       default:
-        return "bg-breeze-500/20 text-breeze-200 border border-breeze-400/30"
+        return "bg-breeze-500/20 text-breeze-800 border border-breeze-400/30"
     }
   }
 
@@ -74,13 +74,13 @@ export function TicketCard({ ticket, compact = false }: TicketCardProps) {
     return (
       <div
         onClick={() => setIsExpanded(!isExpanded)}
-        className="block hover:bg-white/10 transition-all duration-300 border-b border-white/10 last:border-b-0 backdrop-blur-sm cursor-pointer"
+        className="block hover:bg-slate-200 transition-all duration-300 border-b border-slate-300 last:border-b-0 backdrop-blur-sm cursor-pointer"
       >
         <div className="py-4 px-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4 flex-1">
-              <span className="text-sm font-mono text-white/60 bg-white/10 px-2 py-1 rounded-lg">{ticket.idReadable}</span>
-              <h3 className="font-medium text-white/90 truncate">{ticket.summary}</h3>
+              <span className="text-sm font-mono text-breeze-600 bg-slate-200 px-2 py-1 rounded-lg">{ticket.idReadable}</span>
+              <h3 className="font-medium text-breeze-800 truncate">{ticket.summary}</h3>
             </div>
             <div className="flex items-center space-x-3">
               <span className={`px-3 py-1 text-xs font-medium rounded-full backdrop-blur-sm ${getStateColor(ticket.state.name, ticket.state.resolved)}`}>
@@ -89,33 +89,32 @@ export function TicketCard({ ticket, compact = false }: TicketCardProps) {
               <span className={`px-3 py-1 text-xs font-medium rounded-full backdrop-blur-sm ${getPriorityColor(ticket.priority.name)}`}>
                 {ticket.priority.name}
               </span>
-              {ticket.assignee && (
-                <div className="flex items-center space-x-1 text-sm text-white/50">
-                  <User className="w-3 h-3" />
-                  <span>{ticket.assignee.name}</span>
-                </div>
+              {ticket.initiative && (
+                <span className="px-2 py-1 text-xs bg-purple-500/20 text-purple-800 rounded-lg">
+                  {ticket.initiative}
+                </span>
               )}
-              <span className="text-sm text-white/50">{formatDate(ticket.updated)}</span>
+              <span className="text-sm text-breeze-500">{formatDate(ticket.updated)}</span>
             </div>
           </div>
         </div>
         {/* Expandable Description for Compact View */}
         {ticket.description && isExpanded && (
-          <div className="border-t border-white/10 pt-4 px-6 pb-4">
-            <div className="text-white/70 text-sm prose prose-invert prose-sm max-w-none">
+          <div className="border-t border-slate-300 pt-4 px-6 pb-4">
+            <div className="text-breeze-700 text-sm prose prose-sm max-w-none">
               <ReactMarkdown
                 components={{
                   p: ({ children }) => <p className="mb-2">{children}</p>,
-                  h1: ({ children }) => <h4 className="text-base font-semibold text-white/90 mb-2 mt-4 first:mt-0">{children}</h4>,
-                  h2: ({ children }) => <h5 className="text-sm font-semibold text-white/90 mb-2 mt-3 first:mt-0">{children}</h5>,
-                  h3: ({ children }) => <h6 className="text-sm font-semibold text-white/90 mb-1 mt-2 first:mt-0">{children}</h6>,
+                  h1: ({ children }) => <h4 className="text-base font-semibold text-breeze-800 mb-2 mt-4 first:mt-0">{children}</h4>,
+                  h2: ({ children }) => <h5 className="text-sm font-semibold text-breeze-800 mb-2 mt-3 first:mt-0">{children}</h5>,
+                  h3: ({ children }) => <h6 className="text-sm font-semibold text-breeze-800 mb-1 mt-2 first:mt-0">{children}</h6>,
                   ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1 pl-4">{children}</ul>,
                   ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1 pl-4">{children}</ol>,
-                  li: ({ children }) => <li className="text-sm text-white/70">{children}</li>,
+                  li: ({ children }) => <li className="text-sm text-breeze-700">{children}</li>,
                   a: ({ href, children }) => <a href={href} className="text-ocean-300 hover:text-ocean-200 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
-                  code: ({ children }) => <code className="bg-white/10 px-2 py-1 rounded text-sm font-mono">{children}</code>,
-                  pre: ({ children }) => <pre className="bg-white/5 border border-white/10 rounded-lg p-3 mb-3 overflow-x-auto">{children}</pre>,
-                  blockquote: ({ children }) => <blockquote className="border-l-4 border-ocean-400/50 pl-4 mb-3 italic text-white/60">{children}</blockquote>
+                  code: ({ children }) => <code className="bg-slate-200 px-2 py-1 rounded text-sm font-mono">{children}</code>,
+                  pre: ({ children }) => <pre className="bg-slate-100 border border-slate-300 rounded-lg p-3 mb-3 overflow-x-auto">{children}</pre>,
+                  blockquote: ({ children }) => <blockquote className="border-l-4 border-ocean-400/50 pl-4 mb-3 italic text-breeze-600">{children}</blockquote>
                 }}
               >
                 {ticket.description}
@@ -135,14 +134,14 @@ export function TicketCard({ ticket, compact = false }: TicketCardProps) {
       {/* Header Row with all info except description */}
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center space-x-3 flex-1">
-          <span className="text-sm font-mono text-white/60 bg-white/10 px-3 py-1 rounded-lg">{ticket.idReadable}</span>
+          <span className="text-sm font-mono text-breeze-600 bg-slate-200 px-3 py-1 rounded-lg">{ticket.idReadable}</span>
           <div className="flex-1">
-            <h3 className="text-lg font-semibold text-white hover:text-ocean-300 transition-colors group-hover:text-ocean-200 truncate">
+            <h3 className="text-lg font-semibold text-breeze-800 hover:text-ocean-600 transition-colors group-hover:text-ocean-700 truncate">
               {ticket.summary}
             </h3>
           </div>
           {ticket.description && (
-            <div className="flex items-center space-x-1 px-2 py-1 text-xs text-white/60 hover:text-white/90 hover:bg-white/10 rounded-lg transition-all duration-200">
+            <div className="flex items-center space-x-1 px-2 py-1 text-xs text-breeze-600 hover:text-breeze-800 hover:bg-slate-200 rounded-lg transition-all duration-200">
               {isExpanded ? (
                 <>
                   <span>Hide</span>
@@ -165,23 +164,22 @@ export function TicketCard({ ticket, compact = false }: TicketCardProps) {
           <span className={`px-3 py-1 text-xs font-medium rounded-full backdrop-blur-sm ${getPriorityColor(ticket.priority.name)}`}>
             {ticket.priority.name}
           </span>
-          <div className="flex items-center space-x-1 text-sm text-white/50">
+          {ticket.initiative && (
+            <span className="px-3 py-1 text-xs font-medium rounded-full bg-purple-500/20 text-purple-800 border border-purple-400/30">
+              {ticket.initiative}
+            </span>
+          )}
+          <div className="flex items-center space-x-1 text-sm text-breeze-500">
             <Calendar className="w-4 h-4" />
             <span>{formatDate(ticket.created)}</span>
           </div>
-          {ticket.assignee && (
-            <div className="flex items-center space-x-1 text-sm text-white/50">
-              <User className="w-4 h-4" />
-              <span>{ticket.assignee.name}</span>
-            </div>
-          )}
         </div>
         
         <div className="flex items-center space-x-3">
           {ticket.tags.length > 0 && (
             <div className="flex items-center space-x-1">
-              <Tag className="w-4 h-4 text-white/40" />
-              <span className="text-xs text-white/50">
+              <Tag className="w-4 h-4 text-breeze-400" />
+              <span className="text-xs text-breeze-500">
                 {ticket.tags.slice(0, 2).join(", ")}
                 {ticket.tags.length > 2 && ` +${ticket.tags.length - 2}`}
               </span>
@@ -193,23 +191,41 @@ export function TicketCard({ ticket, compact = false }: TicketCardProps) {
         </div>
       </div>
 
+      {/* Assignee Row */}
+      <div className="flex items-center space-x-6 mb-3 text-sm text-breeze-600">
+        {ticket.assignee && (
+          <div className="flex items-center space-x-2">
+            <User className="w-4 h-4" />
+            <span className="text-breeze-500">Assignee:</span>
+            <span className="text-breeze-800">{ticket.assignee.name}</span>
+          </div>
+        )}
+        {!ticket.assignee && (
+          <div className="flex items-center space-x-2">
+            <User className="w-4 h-4" />
+            <span className="text-breeze-500">Assignee:</span>
+            <span className="text-breeze-400 italic">Unassigned</span>
+          </div>
+        )}
+      </div>
+
       {/* Expandable Description */}
       {ticket.description && isExpanded && (
-        <div className="border-t border-white/10 pt-4 mt-3">
-          <div className="text-white/70 text-sm prose prose-invert prose-sm max-w-none">
+        <div className="border-t border-slate-300 pt-4 mt-3">
+          <div className="text-breeze-700 text-sm prose prose-sm max-w-none">
             <ReactMarkdown
               components={{
                 p: ({ children }) => <p className="mb-2">{children}</p>,
-                h1: ({ children }) => <h4 className="text-base font-semibold text-white/90 mb-2 mt-4 first:mt-0">{children}</h4>,
-                h2: ({ children }) => <h5 className="text-sm font-semibold text-white/90 mb-2 mt-3 first:mt-0">{children}</h5>,
-                h3: ({ children }) => <h6 className="text-sm font-semibold text-white/90 mb-1 mt-2 first:mt-0">{children}</h6>,
+                h1: ({ children }) => <h4 className="text-base font-semibold text-breeze-800 mb-2 mt-4 first:mt-0">{children}</h4>,
+                h2: ({ children }) => <h5 className="text-sm font-semibold text-breeze-800 mb-2 mt-3 first:mt-0">{children}</h5>,
+                h3: ({ children }) => <h6 className="text-sm font-semibold text-breeze-800 mb-1 mt-2 first:mt-0">{children}</h6>,
                 ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1 pl-4">{children}</ul>,
                 ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1 pl-4">{children}</ol>,
-                li: ({ children }) => <li className="text-sm text-white/70">{children}</li>,
+                li: ({ children }) => <li className="text-sm text-breeze-700">{children}</li>,
                 a: ({ href, children }) => <a href={href} className="text-ocean-300 hover:text-ocean-200 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
-                code: ({ children }) => <code className="bg-white/10 px-2 py-1 rounded text-sm font-mono">{children}</code>,
-                pre: ({ children }) => <pre className="bg-white/5 border border-white/10 rounded-lg p-3 mb-3 overflow-x-auto">{children}</pre>,
-                blockquote: ({ children }) => <blockquote className="border-l-4 border-ocean-400/50 pl-4 mb-3 italic text-white/60">{children}</blockquote>
+                code: ({ children }) => <code className="bg-slate-200 px-2 py-1 rounded text-sm font-mono">{children}</code>,
+                pre: ({ children }) => <pre className="bg-slate-100 border border-slate-300 rounded-lg p-3 mb-3 overflow-x-auto">{children}</pre>,
+                blockquote: ({ children }) => <blockquote className="border-l-4 border-ocean-400/50 pl-4 mb-3 italic text-breeze-600">{children}</blockquote>
               }}
             >
               {ticket.description}

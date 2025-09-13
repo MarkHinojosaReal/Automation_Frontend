@@ -13,7 +13,7 @@ export function FormField({ label, id, required = false, error, children }: Form
     <div className="space-y-2">
       <label 
         htmlFor={id} 
-        className="block text-sm font-medium text-white/90"
+        className="block text-sm font-medium text-breeze-800"
       >
         {label}
         {required && <span className="text-accent-400 ml-1">*</span>}
@@ -57,7 +57,7 @@ export function TextInput({
       onChange={onChange}
       required={required}
       disabled={disabled}
-      className="input-glass w-full text-white/90 placeholder-white/50 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="input-glass w-full text-breeze-800 placeholder-breeze-500 disabled:opacity-50 disabled:cursor-not-allowed"
     />
   )
 }
@@ -93,7 +93,7 @@ export function TextArea({
       required={required}
       disabled={disabled}
       rows={rows}
-      className="input-glass w-full text-white/90 placeholder-white/50 disabled:opacity-50 disabled:cursor-not-allowed resize-none"
+      className="input-glass w-full text-breeze-800 placeholder-breeze-500 disabled:opacity-50 disabled:cursor-not-allowed resize-none"
     />
   )
 }
@@ -125,7 +125,7 @@ export function Select({
       onChange={onChange}
       required={required}
       disabled={disabled}
-      className="input-glass w-full text-white/90 disabled:opacity-50 disabled:cursor-not-allowed"
+      className="input-glass w-full text-breeze-800 disabled:opacity-50 disabled:cursor-not-allowed"
     >
       {children}
     </select>

@@ -10,7 +10,7 @@ interface ChartCardProps {
 export function ChartCard({ title, data }: ChartCardProps) {
   return (
     <div className="card">
-      <h3 className="text-lg font-semibold text-white mb-4">{title}</h3>
+      <h3 className="text-lg font-semibold text-breeze-800 mb-4">{title}</h3>
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
           <PieChart>

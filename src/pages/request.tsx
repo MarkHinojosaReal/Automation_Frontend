@@ -316,27 +316,13 @@ function RequestPage() {
   return (
     <Layout title="Request Automation">
       <div className="max-w-4xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <div className="flex items-center space-x-3 mb-4">
-            <div className="p-3 bg-gradient-to-br from-accent-400 to-accent-600 rounded-xl shadow-lg">
-              <Sparkles className="w-6 h-6 text-white" />
-            </div>
-            <div>
-              <h1 className="text-3xl font-bold text-white">Request Automation</h1>
-              <p className="text-white/70 mt-1">
-                Submit a detailed request and our team will get back to you
-              </p>
-            </div>
-          </div>
-        </div>
 
         <form onSubmit={handleSubmit} className="space-y-8">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
             {/* Main Form */}
             <div className="lg:col-span-2 space-y-6">
               <div className="card">
-                <h3 className="text-lg font-semibold text-white mb-6 flex items-center justify-center space-x-2">
+                <h3 className="text-lg font-semibold text-breeze-800 mb-6 flex items-center justify-center space-x-2">
                   <div className="w-2 h-2 bg-ocean-400 rounded-full" />
                   <span>Request Details</span>
                 </h3>
@@ -423,10 +409,10 @@ function RequestPage() {
 
               {/* Supporting Links */}
               <div className="card">
-                <h3 className="text-lg font-semibold text-white mb-6 flex items-center justify-center space-x-2">
+                <h3 className="text-lg font-semibold text-breeze-800 mb-6 flex items-center justify-center space-x-2">
                   <Link className="w-5 h-5" />
                   <span>Supporting Links</span>
-                  <span className="text-sm text-white/50 font-normal">(Optional)</span>
+                  <span className="text-sm text-breeze-500 font-normal">(Optional)</span>
                 </h3>
                 
                 <div className="space-y-4">
@@ -435,8 +421,8 @@ function RequestPage() {
                     onClick={addLink}
                     className="w-full bg-ocean-500/20 border border-ocean-400/30 rounded-xl p-4 text-center hover:bg-ocean-500/30 transition-colors flex items-center justify-center space-x-2"
                   >
-                    <Plus className="w-5 h-5 text-ocean-300" />
-                    <span className="text-ocean-200 font-medium">Add Link</span>
+                    <Plus className="w-5 h-5 text-ocean-700" />
+                    <span className="text-ocean-800 font-medium">Add Link</span>
                   </button>
                   
                   {formData.links.length > 0 && (
@@ -444,7 +430,7 @@ function RequestPage() {
                       {formData.links.map((link, index) => (
                         <div key={index} className="bg-white/5 rounded-lg p-4 space-y-3">
                           <div className="flex items-center justify-between">
-                            <span className="text-white/80 text-sm font-medium">Link {index + 1}</span>
+                            <span className="text-breeze-700 text-sm font-medium">Link {index + 1}</span>
                             <div className="flex items-center space-x-2">
                               {editingLinkIndex === index ? (
                                 <>
@@ -507,14 +493,14 @@ function RequestPage() {
                             ) : (
                               <>
                                 <div className="bg-white/10 rounded-lg p-3">
-                                  <p className="text-white/90 text-sm font-medium">{link.name || 'Untitled Link'}</p>
+                                  <p className="text-breeze-800 text-sm font-medium">{link.name || 'Untitled Link'}</p>
                                 </div>
                                 <div className="bg-white/10 rounded-lg p-3">
                                   <a 
                                     href={link.url} 
                                     target="_blank" 
                                     rel="noopener noreferrer"
-                                    className="text-ocean-300 hover:text-ocean-200 text-sm break-all"
+                                    className="text-ocean-700 hover:text-ocean-600 text-sm break-all"
                                   >
                                     {link.url || 'No URL provided'}
                                   </a>
@@ -533,7 +519,7 @@ function RequestPage() {
             {/* Sidebar */}
             <div className="space-y-6">
               <div className="card">
-                <h3 className="text-lg font-semibold text-white mb-6 flex items-center space-x-2">
+                <h3 className="text-lg font-semibold text-breeze-800 mb-6 flex items-center space-x-2">
                   <div className="w-2 h-2 bg-accent-400 rounded-full" />
                   <span>Assignment</span>
                 </h3>
@@ -602,8 +588,8 @@ function RequestPage() {
                 <div className="flex items-start space-x-3">
                   <AlertCircle className="w-5 h-5 text-ocean-300 mt-0.5 flex-shrink-0" />
                   <div>
-                    <h4 className="font-medium text-ocean-200 mb-2">Tips for Better Automation Requests</h4>
-                    <ul className="text-sm text-white/70 space-y-1">
+                    <h4 className="font-medium text-ocean-700 mb-2">Tips for Better Automation Requests</h4>
+                    <ul className="text-sm text-breeze-600 space-y-1">
                       <li>• Be specific about current manual processes</li>
                       <li>• Include time savings estimates</li>
                       <li>• Attach relevant process documents</li>

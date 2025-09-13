@@ -19,7 +19,7 @@ export function LoadingSpinner({ message = "Loading...", size = "md" }: LoadingS
         <Loader2 className={`${sizeClasses[size]} animate-spin text-ocean-400`} />
         <div className="absolute inset-0 bg-ocean-400/20 rounded-full blur-xl animate-pulse" />
       </div>
-      <p className="text-white/70 text-sm font-medium">{message}</p>
+      <p className="text-breeze-600 text-sm font-medium">{message}</p>
     </div>
   )
 }

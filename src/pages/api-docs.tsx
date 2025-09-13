@@ -427,7 +427,7 @@ function CategorySection({ category, endpoints }: { category: string, endpoints:
     <div className="mb-8">
       <button
         onClick={() => setIsExpanded(!isExpanded)}
-        className="flex items-center space-x-2 text-breeze-200 hover:text-white transition-colors duration-200 mb-4"
+        className="flex items-center space-x-2 text-breeze-600 hover:text-breeze-800 transition-colors duration-200 mb-4"
       >
         <ChevronRight 
           className={`w-5 h-5 transition-transform duration-200 ${isExpanded ? 'rotate-90' : ''}`} 
@@ -458,7 +458,7 @@ export default function ApiDocs() {
               <BookOpen className="w-8 h-8 text-ocean-400" />
             </div>
             <div>
-              <h1 className="text-4xl font-bold text-white mb-2">API Docs</h1>
+              <h1 className="text-4xl font-bold text-breeze-800 mb-2">API Docs</h1>
               <p className="text-breeze-300 text-lg">
                 Complete reference for the Automation Frontend API endpoints
               </p>
@@ -467,7 +467,7 @@ export default function ApiDocs() {
           
           {/* Introduction */}
           <div className="glass-card p-6 mb-8">
-            <h2 className="text-2xl font-semibold text-white mb-4">Introduction</h2>
+            <h2 className="text-2xl font-semibold text-breeze-800 mb-4">Introduction</h2>
             <p className="text-breeze-300 leading-relaxed mb-4">
               The Automation Frontend API is organized around REST principles. Our API has predictable 
               resource-oriented URLs, accepts JSON-encoded request bodies, returns JSON-encoded responses, 
@@ -512,7 +512,7 @@ export default function ApiDocs() {
           <div className="glass-card p-6">
             <div className="flex items-center justify-between">
               <div>
-                <h3 className="text-lg font-semibold text-white mb-2">Need Help?</h3>
+                <h3 className="text-lg font-semibold text-breeze-800 mb-2">Need Help?</h3>
                 <p className="text-breeze-300 text-sm">
                   For additional support or questions about the API, please contact the development team.
                 </p>

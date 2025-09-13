@@ -18,7 +18,7 @@ export function ErrorMessage({ message, onRetry, showRetry = true }: ErrorMessag
         <div className="absolute inset-0 bg-red-400/20 rounded-full blur-xl" />
       </div>
       
-      <p className="text-white/70 text-center max-w-md font-medium">{message}</p>
+      <p className="text-breeze-600 text-center max-w-md font-medium">{message}</p>
       
       {showRetry && onRetry && (
         <button

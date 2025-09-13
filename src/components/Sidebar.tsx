@@ -24,17 +24,14 @@ function SidebarItem({ to, icon, label, isActive = false, accent = false }: Side
       to={to}
       className={`menu-item flex items-center space-x-3 px-4 py-3 mx-2 transition-all duration-300 ${
         isActive
-          ? "menu-item active"
+          ? `menu-item active ${accent ? 'accent' : ''}`
           : accent
-          ? "text-accent-200 hover:text-accent-100 hover:bg-accent-500/10"
+          ? "bg-accent-500 hover:bg-accent-600 text-white rounded-lg shadow-lg hover:shadow-xl font-medium"
           : "text-white/70 hover:text-white/90"
       }`}
     >
       {icon}
       <span className="font-medium">{label}</span>
-      {accent && (
-        <div className="ml-auto w-2 h-2 bg-accent-400 rounded-full animate-pulse" />
-      )}
     </Link>
   )
 }
@@ -47,7 +44,6 @@ export function Sidebar() {
     { to: "/projects", icon: <Folder className="w-5 h-5" />, label: "Projects" },
     { to: "/tasks", icon: <Ticket className="w-5 h-5" />, label: "Tasks" },
     { to: "/tools", icon: <Play className="w-5 h-5" />, label: "Tools" },
-    { to: "/api-docs", icon: <BookOpen className="w-5 h-5" />, label: "API Docs" },
     { to: "/request", icon: <Bot className="w-5 h-5" />, label: "New Request", accent: true }
   ]
 
@@ -60,7 +56,14 @@ export function Sidebar() {
   }
 
   return (
-    <aside className="w-64 sidebar-glass fixed left-0 top-16 bottom-0 overflow-y-auto">
+    <aside className="w-64 sidebar-glass fixed left-0 top-0 bottom-0 overflow-y-auto">
+      {/* Logo Section */}
+      <div className="p-4 pt-6 pb-6 flex justify-center">
+        <div className="w-12 h-12 bg-gradient-to-br from-ocean-400 to-ocean-600 rounded-xl flex items-center justify-center shadow-lg">
+          <span className="text-white font-bold text-sm">ATOP</span>
+        </div>
+      </div>
+      
       <nav className="p-4 space-y-2">
         {menuItems.map((item) => (
           <SidebarItem

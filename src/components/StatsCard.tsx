@@ -37,8 +37,8 @@ export function StatsCard({ title, value, icon: Icon, color, trend }: StatsCardP
     <div className="stats-card group">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-white/70 mb-1">{title}</p>
-          <p className="text-3xl font-bold text-white">{value}</p>
+          <p className="text-sm font-medium text-breeze-600 mb-1">{title}</p>
+          <p className="text-3xl font-bold text-breeze-800">{value}</p>
           {trend && (
             <div className="flex items-center mt-2">
               <span
@@ -48,7 +48,7 @@ export function StatsCard({ title, value, icon: Icon, color, trend }: StatsCardP
               >
                 {trend.direction === "up" ? "+" : "-"}{Math.abs(trend.value)}%
               </span>
-              <span className="text-sm text-white/50 ml-1">vs last week</span>
+              <span className="text-sm text-breeze-500 ml-1">vs last week</span>
             </div>
           )}
         </div>
