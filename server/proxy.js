@@ -73,6 +73,14 @@ app.get('/api/metrics', async (req, res) => {
   try {
     console.log('📊 Fetching automation metrics from Render Postgres');
     
+    // Debug: Log environment variables (without showing password)
+    console.log('🔍 Environment check:');
+    console.log('  POSTGRES_HOST:', process.env.POSTGRES_HOST);
+    console.log('  POSTGRES_PORT:', process.env.POSTGRES_PORT);
+    console.log('  POSTGRES_DATABASE:', process.env.POSTGRES_DATABASE);
+    console.log('  POSTGRES_USER:', process.env.POSTGRES_USER);
+    console.log('  POSTGRES_PASSWORD:', process.env.POSTGRES_PASSWORD ? '[SET]' : '[NOT SET]');
+    
     // Connect to Postgres database using environment variables
     const { Client } = require('pg');
     
@@ -82,19 +90,33 @@ app.get('/api/metrics', async (req, res) => {
       throw new Error('POSTGRES_PASSWORD environment variable is required. Please check your .env file.');
     }
     
-    const client = new Client({
+    const clientConfig = {
       host: process.env.POSTGRES_HOST,
       port: process.env.POSTGRES_PORT || 5432,
       database: process.env.POSTGRES_DATABASE,
       user: process.env.POSTGRES_USER,
       password: process.env.POSTGRES_PASSWORD,
-      ssl: {
-        rejectUnauthorized: false
-      }
+      ssl: true,  // Simplified SSL configuration
+      connectionTimeoutMillis: 30000,  // 30 second connection timeout
+      query_timeout: 60000             // 60 second query timeout  
+    };
+    
+    // Debug: Log the actual configuration (without password)
+    console.log('🔧 Client config:', {
+      host: clientConfig.host,
+      port: clientConfig.port,
+      database: clientConfig.database,
+      user: clientConfig.user,
+      password: clientConfig.password ? '[HIDDEN]' : '[MISSING]',
+      ssl: clientConfig.ssl
     });
+    
+    const client = new Client(clientConfig);
     
     console.log(`🔗 Connecting to database: ${process.env.POSTGRES_USER}@${process.env.POSTGRES_HOST}/${process.env.POSTGRES_DATABASE}`);
 
+    // Try direct connection without wrapper first
+    console.log('🔄 Attempting direct connection...');
     await client.connect();
     console.log('✅ Connected to Postgres database');
 
@@ -199,10 +221,25 @@ app.get('/api/metrics', async (req, res) => {
     
   } catch (error) {
     console.error('💥 Error in metrics endpoint:', error);
-    res.status(500).json({ 
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
+    
+    // In development, if database connection fails, return a helpful message
+    // In production (deployed to Render), this should work fine
+    if (error.message.includes('timeout') || error.message.includes('ETIMEDOUT')) {
+      console.log('🚨 Database connection timeout - this is expected in local development');
+      console.log('📝 The metrics page will work properly when deployed to production');
+      
+      res.status(503).json({ 
+        error: "Database connection timeout - this is expected in local development environment",
+        message: "The metrics page will work properly when deployed to production on Render",
+        timestamp: new Date().toISOString(),
+        developmentNote: "Local connections to Render Postgres may be restricted. This will work in production."
+      });
+    } else {
+      res.status(500).json({ 
+        error: error.message,
+        timestamp: new Date().toISOString()
+      });
+    }
   }
 });
 

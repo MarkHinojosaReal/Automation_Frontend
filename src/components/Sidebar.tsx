@@ -17,19 +17,21 @@ interface SidebarItemProps {
   label: string
   isActive?: boolean
   accent?: boolean
+  onClick?: () => void
 }
 
-function SidebarItem({ to, icon, label, isActive = false, accent = false }: SidebarItemProps) {
+function SidebarItem({ to, icon, label, isActive = false, accent = false, onClick }: SidebarItemProps) {
   return (
     <Link
       to={to}
-      className={`menu-item flex items-center space-x-3 px-4 py-3 mx-2 transition-all duration-300 ${
+      className={`menu-item flex items-center space-x-3 px-4 py-3 mx-2 transition-all duration-300 relative z-20 ${
         isActive
           ? `menu-item active ${accent ? 'accent' : ''}`
           : accent
           ? "bg-accent-500 hover:bg-accent-600 text-white rounded-lg shadow-lg hover:shadow-xl font-medium"
           : "text-white/70 hover:text-white/90"
       }`}
+      onClick={onClick}
     >
       {icon}
       <span className="font-medium">{label}</span>
@@ -37,7 +39,12 @@ function SidebarItem({ to, icon, label, isActive = false, accent = false }: Side
   )
 }
 
-export function Sidebar() {
+interface SidebarProps {
+  isOpen?: boolean
+  onClose?: () => void
+}
+
+export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const currentPath = typeof window !== "undefined" ? window.location.pathname : "/"
   
   const menuItems = [
@@ -57,14 +64,26 @@ export function Sidebar() {
     return currentPath.startsWith(itemPath)
   }
 
+  const handleItemClick = () => {
+    // Close mobile sidebar when item is clicked
+    if (onClose) {
+      onClose()
+    }
+  }
+
   return (
-    <aside className="w-64 sidebar-glass fixed left-0 top-0 bottom-0 overflow-y-auto">
-      {/* Logo Section */}
-      <div className="p-4 pt-6 pb-6 flex justify-center">
+    <aside className={`w-64 sidebar-glass fixed left-0 top-0 bottom-0 overflow-y-auto transition-transform duration-300 z-50 ${
+      isOpen ? 'translate-x-0' : '-translate-x-full'
+    } lg:translate-x-0`}>
+      {/* Logo Section - Hidden on mobile (shown in header) */}
+      <div className="p-4 pt-6 pb-6 justify-center hidden lg:flex">
         <div className="w-12 h-12 bg-gradient-to-br from-ocean-400 to-ocean-600 rounded-xl flex items-center justify-center shadow-lg">
           <span className="text-white font-bold text-sm">ATOP</span>
         </div>
       </div>
+      
+      {/* Mobile logo/header spacing */}
+      <div className="h-4 lg:hidden"></div>
       
       <nav className="p-4 space-y-2">
         {menuItems.map((item) => (
@@ -75,6 +94,7 @@ export function Sidebar() {
             label={item.label}
             isActive={isActive(item.to)}
             accent={item.accent}
+            onClick={handleItemClick}
           />
         ))}
       </nav>

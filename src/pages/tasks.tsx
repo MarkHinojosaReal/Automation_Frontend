@@ -4,7 +4,6 @@ import { TicketList } from "../components/TicketList"
 import { LoadingSpinner } from "../components/LoadingSpinner"
 import { ErrorMessage } from "../components/ErrorMessage"
 import { useYouTrack } from "../hooks/useYouTrack"
-import { RefreshCw } from "lucide-react"
 
 function TicketsPage() {
   const { tickets, loading, error, refetch } = useYouTrack()

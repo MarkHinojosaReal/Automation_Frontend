@@ -88,13 +88,13 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
       {showFilters && (
         <div className="mb-6 space-y-4">
           {/* Filters */}
-          <div className="flex flex-wrap gap-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3">
             <div className="flex items-center space-x-2">
               <Filter className="w-4 h-4 text-breeze-500" />
               <select
                 value={stateFilter}
                 onChange={(e) => setStateFilter(e.target.value)}
-                className="input-glass px-3 py-2 text-sm text-breeze-800"
+                className="input-glass px-3 py-2 text-sm text-breeze-800 flex-1"
               >
                 <option value="all">All States</option>
                 {uniqueStates.map(state => (
@@ -177,7 +177,7 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
       )}
 
       {/* Projects */}
-      <div className={compact ? "glass-card border border-white/20 rounded-xl overflow-hidden" : "space-y-4"}>
+      <div className={compact ? "glass-card border border-white/20 rounded-xl overflow-hidden" : "grid grid-cols-1 lg:grid-cols-2 gap-4"}>
         {filteredProjects.map((project) => (
           <ProjectCard key={project.id} project={project} compact={compact} />
         ))}

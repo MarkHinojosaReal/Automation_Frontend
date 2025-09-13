@@ -4,7 +4,6 @@ import { ProjectList } from "../components/ProjectList"
 import { LoadingSpinner } from "../components/LoadingSpinner"
 import { ErrorMessage } from "../components/ErrorMessage"
 import { useYouTrackProjects } from "../hooks/useYouTrack"
-import { RefreshCw } from "lucide-react"
 
 function ProjectsPage() {
   const { tickets: projects, loading, error, refetch } = useYouTrackProjects()

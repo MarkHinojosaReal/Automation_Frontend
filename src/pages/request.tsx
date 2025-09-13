@@ -340,17 +340,17 @@ function RequestPage() {
     <Layout title="Request Automation">
       <div className="max-w-4xl mx-auto">
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <form onSubmit={handleSubmit} className="space-y-6 lg:space-y-8">
+          <div className="grid grid-cols-1 xl:grid-cols-3 gap-6 lg:gap-8">
             {/* Main Form */}
-            <div className="lg:col-span-2 space-y-6">
+            <div className="xl:col-span-2 space-y-6">
               <div className="card">
                 <h3 className="text-lg font-semibold text-breeze-800 mb-6 text-center">
                   <span>Request Details</span>
                 </h3>
                 
                 <div className="space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 lg:gap-6">
                     <FormField label="Type" id="type">
                       <Select
                         id="type"
@@ -643,7 +643,7 @@ function RequestPage() {
         {/* No Links Confirmation Modal */}
         {showNoLinksModal && (
           <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-            <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+            <div className="bg-white rounded-2xl p-4 sm:p-6 max-w-md w-full mx-4 shadow-2xl">
               <div className="text-center mb-6">
                 <div className="w-16 h-16 bg-accent-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
                   <AlertCircle className="w-8 h-8 text-accent-600" />
