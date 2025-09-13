@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
@@ -246,7 +247,12 @@ app.get('/api/metrics', async (req, res) => {
     // Use Render MCP to query the Postgres database
     const { Client } = require('pg');
     
-    // Get connection details from environment variables
+    // Validate required environment variables
+    if (!process.env.POSTGRES_PASSWORD) {
+      console.error('❌ POSTGRES_PASSWORD environment variable is required');
+      throw new Error('POSTGRES_PASSWORD environment variable is required. Please check your environment variables.');
+    }
+    
     const client = new Client({
       host: process.env.POSTGRES_HOST,
       port: process.env.POSTGRES_PORT || 5432,
@@ -257,8 +263,11 @@ app.get('/api/metrics', async (req, res) => {
         rejectUnauthorized: false
       }
     });
+    
+    console.log(`🔗 Connecting to database: ${process.env.POSTGRES_USER}@${process.env.POSTGRES_HOST}/${process.env.POSTGRES_DATABASE}`);
 
     await client.connect();
+    console.log('✅ Connected to Postgres database');
 
     // Query 1: Get all execution data with duration calculation
     const executionsQuery = `
@@ -275,6 +284,7 @@ app.get('/api/metrics', async (req, res) => {
     
     const executionsResult = await client.query(executionsQuery);
     const executions = executionsResult.rows;
+    console.log(`📊 Found ${executions.length} execution records`);
 
     // Process the data for metrics
     const totalExecutions = executions.length;
@@ -305,9 +315,10 @@ app.get('/api/metrics', async (req, res) => {
       date.setDate(date.getDate() - i);
       const dateStr = date.toISOString().split('T')[0];
       
-      const dayExecutions = executions.filter(e => 
-        e.automation_start_time.startsWith(dateStr)
-      ).length;
+      const dayExecutions = executions.filter(e => {
+        const execDate = new Date(e.automation_start_time).toISOString().split('T')[0];
+        return execDate === dateStr;
+      }).length;
       
       executionsByDay.push({
         date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
@@ -353,6 +364,7 @@ app.get('/api/metrics', async (req, res) => {
     };
 
     await client.end();
+    console.log('✅ Database connection closed');
     
     console.log('📊 Successfully fetched metrics data');
     res.json(metricsData);
