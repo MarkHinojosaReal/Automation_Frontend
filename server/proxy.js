@@ -1,3 +1,4 @@
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const { spawn } = require('child_process');
@@ -65,6 +66,144 @@ async function makeYouTrackRequest(endpoint, method = 'GET', body = null) {
 // Health check endpoint
 app.get('/health', (req, res) => {
   res.json({ status: 'ok', message: 'YouTrack proxy server is running' });
+});
+
+// Metrics endpoint for automation executions
+app.get('/api/metrics', async (req, res) => {
+  try {
+    console.log('📊 Fetching automation metrics from Render Postgres');
+    
+    // Connect to Postgres database using environment variables
+    const { Client } = require('pg');
+    
+    // Validate required environment variables
+    if (!process.env.POSTGRES_PASSWORD) {
+      console.error('❌ POSTGRES_PASSWORD environment variable is required');
+      throw new Error('POSTGRES_PASSWORD environment variable is required. Please check your .env file.');
+    }
+    
+    const client = new Client({
+      host: process.env.POSTGRES_HOST,
+      port: process.env.POSTGRES_PORT || 5432,
+      database: process.env.POSTGRES_DATABASE,
+      user: process.env.POSTGRES_USER,
+      password: process.env.POSTGRES_PASSWORD,
+      ssl: {
+        rejectUnauthorized: false
+      }
+    });
+    
+    console.log(`🔗 Connecting to database: ${process.env.POSTGRES_USER}@${process.env.POSTGRES_HOST}/${process.env.POSTGRES_DATABASE}`);
+
+    await client.connect();
+    console.log('✅ Connected to Postgres database');
+
+    // Query execution data with duration calculation
+    const executionsQuery = `
+      SELECT 
+        id,
+        automation_id,
+        automation_start_time,
+        automation_end_time,
+        status,
+        EXTRACT(EPOCH FROM (automation_end_time - automation_start_time)) as duration_seconds
+      FROM src.automation_executions
+      ORDER BY automation_start_time DESC
+    `;
+    
+    const executionsResult = await client.query(executionsQuery);
+    const executions = executionsResult.rows;
+    console.log(`📊 Found ${executions.length} execution records`);
+
+    // Process the data for metrics
+    const totalExecutions = executions.length;
+    const successfulExecutions = executions.filter(e => e.status === 'Passed').length;
+    const successRate = totalExecutions > 0 ? (successfulExecutions / totalExecutions) * 100 : 0;
+    
+    const durations = executions.map(e => parseFloat(e.duration_seconds));
+    const averageDuration = durations.length > 0 ? durations.reduce((a, b) => a + b, 0) / durations.length : 0;
+
+    // Executions by status
+    const statusCounts = executions.reduce((acc, exec) => {
+      acc[exec.status] = (acc[exec.status] || 0) + 1;
+      return acc;
+    }, {});
+
+    const executionsByStatus = Object.entries(statusCounts).map(([status, count]) => ({
+      name: status,
+      value: count,
+      color: status === 'Passed' ? '#10b981' : status === 'Failed' ? '#ef4444' : '#f59e0b'
+    }));
+
+    // Executions by day (last 7 days)
+    const today = new Date();
+    const executionsByDay = [];
+    
+    for (let i = 6; i >= 0; i--) {
+      const date = new Date(today);
+      date.setDate(date.getDate() - i);
+      const dateStr = date.toISOString().split('T')[0];
+      
+      const dayExecutions = executions.filter(e => {
+        const execDate = new Date(e.automation_start_time).toISOString().split('T')[0];
+        return execDate === dateStr;
+      }).length;
+      
+      executionsByDay.push({
+        date: date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
+        executions: dayExecutions
+      });
+    }
+
+    // Executions by automation
+    const automationCounts = executions.reduce((acc, exec) => {
+      if (!acc[exec.automation_id]) {
+        acc[exec.automation_id] = { count: 0, totalDuration: 0 };
+      }
+      acc[exec.automation_id].count += 1;
+      acc[exec.automation_id].totalDuration += parseFloat(exec.duration_seconds);
+      return acc;
+    }, {});
+
+    const executionsByAutomation = Object.entries(automationCounts).map(([id, data]) => ({
+      automation_id: id.slice(0, 8) + '...',
+      count: data.count,
+      avg_duration: data.totalDuration / data.count
+    }));
+
+    // Duration trend (last 10 executions)
+    const recentExecutions = executions.slice(0, 10).reverse();
+    const durationTrend = recentExecutions.map((exec, index) => ({
+      time: new Date(exec.automation_start_time).toLocaleTimeString('en-US', { 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      }),
+      duration: parseFloat(exec.duration_seconds)
+    }));
+
+    const metricsData = {
+      totalExecutions,
+      successRate,
+      averageDuration,
+      executionsByStatus,
+      executionsByDay,
+      executionsByAutomation,
+      durationTrend,
+      recentExecutions: executions.slice(0, 20) // Last 20 executions for the table
+    };
+
+    await client.end();
+    console.log('✅ Database connection closed');
+    
+    res.json(metricsData);
+    
+  } catch (error) {
+    console.error('💥 Error in metrics endpoint:', error);
+    res.status(500).json({ 
+      error: error.message,
+      timestamp: new Date().toISOString()
+    });
+  }
 });
 
 // Proxy endpoint for current sprint issues

@@ -9,7 +9,7 @@
     "proxy": "node server/proxy.js",
     "gatsby-only": "gatsby develop",
     "start": "node server/production-server.js",
-    "build": "gatsby build",
+    "build": "NODE_NO_WARNINGS=1 gatsby build",
     "serve": "gatsby serve",
     "clean": "gatsby clean",
     "type-check": "tsc --noEmit",
@@ -30,6 +30,7 @@
     "gatsby-transformer-sharp": "^5.13.0",
     "lucide-react": "^0.294.0",
     "node-fetch": "^3.3.2",
+    "pg": "^8.16.3",
     "postcss": "^8.4.32",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
@@ -52,5 +53,8 @@
     "ticketing",
     "reporting"
   ],
+  "overrides": {
+    "punycode": "^2.3.1"
+  },
   "license": "MIT"
 }

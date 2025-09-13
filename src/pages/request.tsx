@@ -52,6 +52,7 @@ function RequestPage() {
   const [loadingInitiatives, setLoadingInitiatives] = useState(true)
   const [editingLinkIndex, setEditingLinkIndex] = useState<number | null>(null)
   const [tempLinkData, setTempLinkData] = useState<{ name: string; url: string }>({ name: '', url: '' })
+  const [showNoLinksModal, setShowNoLinksModal] = useState(false)
 
   // Generate a mock ticket number (in real implementation, this would come from the API)
   const generateTicketNumber = () => {
@@ -206,9 +207,6 @@ function RequestPage() {
     if (!formData.manualTimeInvestment.trim()) {
       newErrors.manualTimeInvestment = "Manual time investment is required"
     }
-    if (!formData.initiative) {
-      newErrors.initiative = "Please select an initiative"
-    }
     
     setErrors(newErrors)
     return Object.keys(newErrors).length === 0
@@ -223,14 +221,25 @@ function RequestPage() {
       return
     }
     
+    // Check if no links are provided
+    const validLinks = formData.links.filter(link => link.name.trim() && link.url.trim())
+    if (validLinks.length === 0) {
+      setShowNoLinksModal(true)
+      return
+    }
+    
     console.log('Form validation passed, submitting...')
+    await submitForm()
+  }
+
+  const submitForm = async () => {
     setIsSubmitting(true)
     
     try {
       // Create ticket in YouTrack ATOP project with exact field mapping
       const issueData = {
         summary: formData.projectName, // Summary = Project Name
-        description: `${formData.projectDescription}\n\n**Manual Time Investment:**\n${formData.manualTimeInvestment}\n\n**Priority:** ${formData.priority}`, // Project description, time savings, and priority
+        description: `### Project Description\n${formData.projectDescription}\n\n### What Needs to Be Done\n* Task Breakdown\n\n### Completion Criteria\n* \n\n**Manual Time Investment:**\n${formData.manualTimeInvestment}\n\n**Priority:** ${formData.priority}`, // Structured template with project description
         project: '0-5', // ATOP project internal ID
         type: 'Project', // Always create as Type: Project
         state: 'Needs Scoping', // Always set State to "Needs Scoping"
@@ -313,6 +322,20 @@ function RequestPage() {
     setTempLinkData({ name: '', url: '' })
   }
 
+  const handleSubmitAnyway = async () => {
+    setShowNoLinksModal(false)
+    await submitForm()
+  }
+
+  const handleGoBackToEdit = () => {
+    setShowNoLinksModal(false)
+    // Focus on the links section
+    const linksSection = document.querySelector('[data-links-section]')
+    if (linksSection) {
+      linksSection.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }
+  }
+
   return (
     <Layout title="Request Automation">
       <div className="max-w-4xl mx-auto">
@@ -322,12 +345,41 @@ function RequestPage() {
             {/* Main Form */}
             <div className="lg:col-span-2 space-y-6">
               <div className="card">
-                <h3 className="text-lg font-semibold text-breeze-800 mb-6 flex items-center justify-center space-x-2">
-                  <div className="w-2 h-2 bg-ocean-400 rounded-full" />
+                <h3 className="text-lg font-semibold text-breeze-800 mb-6 text-center">
                   <span>Request Details</span>
                 </h3>
                 
                 <div className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField label="Type" id="type">
+                      <Select
+                        id="type"
+                        name="type"
+                        value={formData.type}
+                        onChange={handleInputChange}
+                      >
+                        <option value="new-automation">New Automation</option>
+                        <option value="update-automation">Update Existing Automation</option>
+                        <option value="new-tool">New Tool</option>
+                        <option value="research">Research</option>
+                      </Select>
+                    </FormField>
+
+                    <FormField label="Priority" id="priority">
+                      <Select
+                        id="priority"
+                        name="priority"
+                        value={formData.priority}
+                        onChange={handleInputChange}
+                      >
+                        <option value="low">Low</option>
+                        <option value="medium">Medium</option>
+                        <option value="high">High</option>
+                        <option value="critical">Critical</option>
+                      </Select>
+                    </FormField>
+                  </div>
+
                   <FormField label="Real Email Address" id="email" required error={errors.email}>
                     <TextInput
                       id="email"
@@ -375,45 +427,26 @@ function RequestPage() {
                     />
                   </FormField>
 
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <FormField label="Type" id="type">
-                      <Select
-                        id="type"
-                        name="type"
-                        value={formData.type}
-                        onChange={handleInputChange}
-                      >
-                        <option value="new-automation">New Automation</option>
-                        <option value="update-automation">Update Existing Automation</option>
-                        <option value="new-tool">New Tool</option>
-                        <option value="research">Research</option>
-                      </Select>
-                    </FormField>
-
-                    <FormField label="Priority" id="priority">
-                      <Select
-                        id="priority"
-                        name="priority"
-                        value={formData.priority}
-                        onChange={handleInputChange}
-                      >
-                        <option value="low">Low</option>
-                        <option value="medium">Medium</option>
-                        <option value="high">High</option>
-                        <option value="critical">Critical</option>
-                      </Select>
-                    </FormField>
-                  </div>
                 </div>
               </div>
 
               {/* Supporting Links */}
-              <div className="card">
+              <div className="card" data-links-section>
                 <h3 className="text-lg font-semibold text-breeze-800 mb-6 flex items-center justify-center space-x-2">
                   <Link className="w-5 h-5" />
                   <span>Supporting Links</span>
                   <span className="text-sm text-breeze-500 font-normal">(Optional)</span>
                 </h3>
+                
+                {/* Video SOP Encouragement */}
+                <div className="bg-gradient-to-r from-accent-500/20 to-purple-500/20 border border-accent-400/40 rounded-xl p-4 mb-6">
+                  <div>
+                    <h4 className="font-semibold text-accent-800 mb-1">📹 Video SOPs Highly Encouraged!</h4>
+                    <p className="text-sm text-breeze-700 leading-relaxed">
+                      Including a <strong>video walkthrough</strong> of your current manual process significantly speeds up our development.
+                    </p>
+                  </div>
+                </div>
                 
                 <div className="space-y-4">
                   <button
@@ -437,7 +470,7 @@ function RequestPage() {
                                   <button
                                     type="button"
                                     onClick={() => saveLink(index)}
-                                    className="text-green-400 hover:text-green-300 text-sm flex items-center space-x-1"
+                                    className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg flex items-center space-x-1 transition-colors"
                                     disabled={!tempLinkData.name.trim() || !tempLinkData.url.trim()}
                                   >
                                     <Check className="w-4 h-4" />
@@ -446,7 +479,7 @@ function RequestPage() {
                                   <button
                                     type="button"
                                     onClick={() => cancelEditLink(index)}
-                                    className="text-gray-400 hover:text-gray-300 text-sm flex items-center space-x-1"
+                                    className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg flex items-center space-x-1 transition-colors"
                                   >
                                     <X className="w-4 h-4" />
                                     <span>Cancel</span>
@@ -519,19 +552,17 @@ function RequestPage() {
             {/* Sidebar */}
             <div className="space-y-6">
               <div className="card">
-                <h3 className="text-lg font-semibold text-breeze-800 mb-6 flex items-center space-x-2">
-                  <div className="w-2 h-2 bg-accent-400 rounded-full" />
-                  <span>Assignment</span>
+                <h3 className="text-lg font-semibold text-breeze-800 mb-6 text-center">
+                  <span>Additional Details</span>
                 </h3>
                 
                 <div className="space-y-6">
-                  <FormField label="Initiative" id="initiative" required error={errors.initiative}>
+                  <FormField label="Initiative" id="initiative" error={errors.initiative}>
                     <Select
                       id="initiative"
                       name="initiative"
                       value={formData.initiative}
                       onChange={handleInputChange}
-                      required
                     >
                       <option value="">Select Initiative</option>
                       <option value="infrastructure">Infrastructure</option>
@@ -608,6 +639,40 @@ function RequestPage() {
           onClose={handleModalClose}
           ticketNumber={ticketNumber}
         />
+
+        {/* No Links Confirmation Modal */}
+        {showNoLinksModal && (
+          <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+            <div className="bg-white rounded-2xl p-6 max-w-md w-full mx-4 shadow-2xl">
+              <div className="text-center mb-6">
+                <div className="w-16 h-16 bg-accent-500/20 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <AlertCircle className="w-8 h-8 text-accent-600" />
+                </div>
+                <h3 className="text-xl font-semibold text-breeze-800 mb-2">Hey there!</h3>
+                <p className="text-breeze-600 leading-relaxed">
+                  No links were included in the request. Including SOPs, resources and important links 
+                  helps with scoping and prioritizing requests.
+                </p>
+              </div>
+              
+              <div className="flex flex-col sm:flex-row gap-3">
+                <button
+                  onClick={handleGoBackToEdit}
+                  className="flex-1 px-4 py-2 bg-ocean-500 hover:bg-ocean-600 text-white font-medium rounded-lg transition-colors"
+                >
+                  Go Back to Editing
+                </button>
+                <button
+                  onClick={handleSubmitAnyway}
+                  disabled={isSubmitting}
+                  className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isSubmitting ? 'Submitting...' : 'Submit Anyway'}
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </Layout>
   )

@@ -7,7 +7,8 @@ import {
   Bot,
   Zap,
   Play,
-  BookOpen
+  BookOpen,
+  BarChart3
 } from "lucide-react"
 
 interface SidebarItemProps {
@@ -43,6 +44,7 @@ export function Sidebar() {
     { to: "/", icon: <Home className="w-5 h-5" />, label: "Home" },
     { to: "/projects", icon: <Folder className="w-5 h-5" />, label: "Projects" },
     { to: "/tasks", icon: <Ticket className="w-5 h-5" />, label: "Tasks" },
+    { to: "/metrics", icon: <BarChart3 className="w-5 h-5" />, label: "Metrics" },
     { to: "/tools", icon: <Play className="w-5 h-5" />, label: "Tools" },
     { to: "/request", icon: <Bot className="w-5 h-5" />, label: "New Request", accent: true }
   ]
