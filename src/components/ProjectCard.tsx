@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { Link } from "gatsby"
 import ReactMarkdown from "react-markdown"
-import { Calendar, User, Tag, ChevronDown, ChevronUp, Users, Clock } from "lucide-react"
+import { Calendar, User, Tag, ChevronDown, ChevronUp, Users, Clock, DollarSign } from "lucide-react"
 import type { Ticket } from "../types"
 
 interface ProjectCardProps {
@@ -23,6 +23,14 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
     
     const hours = minutes / 60
     return `${hours.toFixed(1)}h`
+  }
+
+  const formatCostImpact = (minutes: number | null | undefined) => {
+    if (!minutes || minutes === 0) return null
+    
+    const hours = minutes / 60
+    const cost = hours * 35 // $35/hour
+    return `$${cost.toLocaleString()}`
   }
 
   const getYouTrackUrl = (idReadable: string) => {
@@ -118,6 +126,12 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
                 <div className="flex items-center space-x-1 text-sm text-green-600">
                   <Clock className="w-3 h-3" />
                   <span>{formatSavedTime(project.savedTimeMins)}</span>
+                </div>
+              )}
+              {project.savedTimeMins && (
+                <div className="flex items-center space-x-1 text-sm text-green-700">
+                  <DollarSign className="w-3 h-3" />
+                  <span>{formatCostImpact(project.savedTimeMins)}</span>
                 </div>
               )}
               {project.assignee && (
@@ -217,6 +231,12 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
             <div className="flex items-center space-x-1 text-sm text-green-600 flex-shrink-0">
               <Clock className="w-4 h-4" />
               <span>{formatSavedTime(project.savedTimeMins)}</span>
+            </div>
+          )}
+          {project.savedTimeMins && (
+            <div className="flex items-center space-x-1 text-sm text-green-700 flex-shrink-0">
+              <DollarSign className="w-4 h-4" />
+              <span>{formatCostImpact(project.savedTimeMins)}</span>
             </div>
           )}
         </div>
