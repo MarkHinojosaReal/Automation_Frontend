@@ -18,8 +18,16 @@ app.use(cors({
 app.use(express.json());
 app.use(cookieParser());
 
-// Add auth routes
+// Add auth routes (must come before auth middleware)
 app.use('/api/auth', authRoutes);
+
+// Apply auth middleware to all API routes except auth routes
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/auth')) {
+    return next();
+  }
+  authMiddleware(req, res, next);
+});
 
 // YouTrack configuration
 const YOUTRACK_BASE_URL = process.env.YOUTRACK_BASE_URL;
@@ -33,6 +41,16 @@ if (!YOUTRACK_BASE_URL) {
 
 if (!YOUTRACK_TOKEN) {
   console.error('❌ YOUTRACK_TOKEN environment variable is required');
+  process.exit(1);
+}
+
+if (!process.env.JWT_SECRET) {
+  console.error('❌ JWT_SECRET environment variable is required');
+  process.exit(1);
+}
+
+if (!process.env.GOOGLE_CLIENT_ID) {
+  console.error('❌ GOOGLE_CLIENT_ID environment variable is required');
   process.exit(1);
 }
 
@@ -404,14 +422,6 @@ app.get('/api/metrics', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   }
-});
-
-// Apply auth middleware to all API routes except auth routes
-app.use('/api', (req, res, next) => {
-  if (req.path.startsWith('/auth')) {
-    return next();
-  }
-  authMiddleware(req, res, next);
 });
 
 // Serve static files without auth
