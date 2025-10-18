@@ -19,16 +19,12 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
   }
 
   const formatSavedTime = (minutes: number | null | undefined) => {
-    if (!minutes || minutes === 0) return null
-    
-    const hours = minutes / 60
+    const hours = (minutes || 0) / 60
     return `${hours.toFixed(1)}h`
   }
 
   const formatCostImpact = (minutes: number | null | undefined) => {
-    if (!minutes || minutes === 0) return null
-    
-    const hours = minutes / 60
+    const hours = (minutes || 0) / 60
     const cost = hours * 35 // $35/hour
     return `$${cost.toLocaleString()}`
   }
@@ -122,18 +118,6 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
                   {project.initiative}
                 </span>
               )}
-              {project.savedTimeMins && (
-                <div className="flex items-center space-x-1 text-sm text-green-600">
-                  <Clock className="w-3 h-3" />
-                  <span>{formatSavedTime(project.savedTimeMins)}</span>
-                </div>
-              )}
-              {project.savedTimeMins && (
-                <div className="flex items-center space-x-1 text-sm text-green-700">
-                  <DollarSign className="w-3 h-3" />
-                  <span>{formatCostImpact(project.savedTimeMins)}</span>
-                </div>
-              )}
               {project.assignee && (
                 <div className="flex items-center space-x-1 text-sm text-breeze-500">
                   <User className="w-3 h-3" />
@@ -144,6 +128,21 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
             </div>
           </div>
         </div>
+        
+        {/* Time Savings and Cost Impact for Compact View */}
+        <div className="px-6 py-2 border-t border-slate-200">
+          <div className="flex items-center space-x-6 text-sm text-breeze-600">
+            <div className="flex items-center space-x-2">
+              <span className="text-breeze-500">Time Saved:</span>
+              <span className="text-green-600 font-medium">{formatSavedTime(project.savedTimeMins)}</span>
+            </div>
+            <div className="flex items-center space-x-2">
+              <span className="text-breeze-500">Cost Impact:</span>
+              <span className="text-green-700 font-medium">{formatCostImpact(project.savedTimeMins)}</span>
+            </div>
+          </div>
+        </div>
+        
         {/* Expandable Description for Compact View */}
         {project.description && isExpanded && (
           <div className="border-t border-slate-300 pt-4 px-6 pb-4">
@@ -227,18 +226,6 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
             <Calendar className="w-4 h-4" />
             <span>{formatDate(project.created)}</span>
           </div>
-          {project.savedTimeMins && (
-            <div className="flex items-center space-x-1 text-sm text-green-600 flex-shrink-0">
-              <Clock className="w-4 h-4" />
-              <span>{formatSavedTime(project.savedTimeMins)}</span>
-            </div>
-          )}
-          {project.savedTimeMins && (
-            <div className="flex items-center space-x-1 text-sm text-green-700 flex-shrink-0">
-              <DollarSign className="w-4 h-4" />
-              <span>{formatCostImpact(project.savedTimeMins)}</span>
-            </div>
-          )}
         </div>
         
         <div className="flex items-center space-x-3 flex-shrink-0">
@@ -278,6 +265,18 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
             <span className="text-breeze-400 italic">Unassigned</span>
           </div>
         )}
+      </div>
+
+      {/* Time Savings and Cost Impact Row */}
+      <div className="flex items-center space-x-6 mb-3 text-sm text-breeze-600">
+        <div className="flex items-center space-x-2">
+          <span className="text-breeze-500">Time Saved:</span>
+          <span className="text-green-600 font-medium">{formatSavedTime(project.savedTimeMins)}</span>
+        </div>
+        <div className="flex items-center space-x-2">
+          <span className="text-breeze-500">Cost Impact:</span>
+          <span className="text-green-700 font-medium">{formatCostImpact(project.savedTimeMins)}</span>
+        </div>
       </div>
 
       {/* Expandable Description */}
