@@ -1,7 +1,7 @@
 import React, { useState } from "react"
 import { Link } from "gatsby"
 import ReactMarkdown from "react-markdown"
-import { Calendar, User, Tag, ChevronDown, ChevronUp, Users } from "lucide-react"
+import { Calendar, User, Tag, ChevronDown, ChevronUp, Users, Clock } from "lucide-react"
 import type { Ticket } from "../types"
 
 interface ProjectCardProps {
@@ -16,6 +16,18 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
       month: "short",
       day: "numeric"
     })
+  }
+
+  const formatSavedTime = (minutes: number | null | undefined) => {
+    if (!minutes || minutes === 0) return null
+    
+    const hours = minutes / 60
+    return `${hours.toFixed(1)}h`
+  }
+
+  const getYouTrackUrl = (idReadable: string) => {
+    const youtrackBase = process.env.GATSBY_YOUTRACK_BASE_URL || 'https://realbrokerage.youtrack.cloud'
+    return `${youtrackBase}/issue/${idReadable}`
   }
 
   const getPriorityColor = (priorityName: string) => {
@@ -77,12 +89,20 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
         className="block hover:bg-slate-200 transition-all duration-300 border-b border-slate-300 last:border-b-0 backdrop-blur-sm cursor-pointer"
       >
         <div className="py-4 px-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-4 flex-1">
-              <span className="text-sm font-mono text-breeze-600 bg-slate-200 px-2 py-1 rounded-lg">{project.idReadable}</span>
-              <h3 className="font-medium text-breeze-800 truncate">{project.summary}</h3>
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center space-x-4 flex-1 min-w-0">
+              <a 
+                href={getYouTrackUrl(project.idReadable)}
+                target="_blank"
+                rel="noopener noreferrer"
+                onClick={(e) => e.stopPropagation()}
+                className="text-sm font-mono text-breeze-600 bg-slate-200 px-2 py-1 rounded-lg flex-shrink-0 hover:bg-slate-300 hover:text-breeze-800 transition-colors cursor-pointer"
+              >
+                {project.idReadable}
+              </a>
+              <h3 className="font-medium text-breeze-800 truncate min-w-0 flex-1">{project.summary}</h3>
             </div>
-            <div className="flex items-center space-x-3">
+            <div className="flex items-center space-x-3 flex-shrink-0">
               <span className={`px-3 py-1 text-xs font-medium rounded-full backdrop-blur-sm ${getStateColor(project.state.name, project.state.resolved)}`}>
                 {project.state.name}
               </span>
@@ -93,6 +113,12 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
                 <span className="px-2 py-1 text-xs bg-purple-500/20 text-purple-800 rounded-lg">
                   {project.initiative}
                 </span>
+              )}
+              {project.savedTimeMins && (
+                <div className="flex items-center space-x-1 text-sm text-green-600">
+                  <Clock className="w-3 h-3" />
+                  <span>{formatSavedTime(project.savedTimeMins)}</span>
+                </div>
               )}
               {project.assignee && (
                 <div className="flex items-center space-x-1 text-sm text-breeze-500">
@@ -138,54 +164,68 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
       onClick={() => setIsExpanded(!isExpanded)}
     >
       {/* Header Row with all info except description */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-3 flex-1">
-          <span className="text-sm font-mono text-breeze-600 bg-slate-200 px-3 py-1 rounded-lg">{project.idReadable}</span>
-          <div className="flex-1">
+      <div className="flex items-center justify-between mb-3 gap-4">
+        <div className="flex items-center space-x-3 flex-1 min-w-0">
+          <a 
+            href={getYouTrackUrl(project.idReadable)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
+            className="text-sm font-mono text-breeze-600 bg-slate-200 px-3 py-1 rounded-lg flex-shrink-0 hover:bg-slate-300 hover:text-breeze-800 transition-colors cursor-pointer"
+          >
+            {project.idReadable}
+          </a>
+          <div className="flex-1 min-w-0">
             <h3 className="text-lg font-semibold text-breeze-800 hover:text-ocean-600 transition-colors group-hover:text-ocean-700 truncate">
               {project.summary}
             </h3>
           </div>
-          {project.description && (
-            <div className="flex items-center space-x-1 px-2 py-1 text-xs text-breeze-600 hover:text-breeze-800 hover:bg-slate-200 rounded-lg transition-all duration-200">
-              {isExpanded ? (
-                <>
-                  <span>Hide</span>
-                  <ChevronUp className="w-3 h-3" />
-                </>
-              ) : (
-                <>
-                  <span>Details</span>
-                  <ChevronDown className="w-3 h-3" />
-                </>
-              )}
-            </div>
-          )}
         </div>
+        {project.description && (
+          <div className="flex items-center space-x-1 px-2 py-1 text-xs text-breeze-600 hover:text-breeze-800 hover:bg-slate-200 rounded-lg transition-all duration-200 flex-shrink-0">
+            {isExpanded ? (
+              <>
+                <span>Hide</span>
+                <ChevronUp className="w-3 h-3" />
+              </>
+            ) : (
+              <>
+                <span>Details</span>
+                <ChevronDown className="w-3 h-3" />
+              </>
+            )}
+          </div>
+        )}
       </div>
 
       {/* Metadata Row */}
-      <div className="flex items-center justify-between mb-3">
-        <div className="flex items-center space-x-4">
-          <span className={`px-3 py-1 text-xs font-medium rounded-full backdrop-blur-sm ${getPriorityColor(project.priority.name)}`}>
+      <div className="flex items-center justify-between mb-3 gap-4">
+        <div className="flex items-center space-x-4 flex-1 min-w-0">
+          <span className={`px-3 py-1 text-xs font-medium rounded-full backdrop-blur-sm ${getPriorityColor(project.priority.name)} flex-shrink-0`}>
             {project.priority.name}
           </span>
           {project.initiative && (
-            <span className="px-3 py-1 text-xs font-medium rounded-full bg-purple-500/20 text-purple-800 border border-purple-400/30">
+            <span className="px-3 py-1 text-xs font-medium rounded-full bg-purple-500/20 text-purple-800 border border-purple-400/30 flex-shrink-0">
               {project.initiative}
             </span>
           )}
-          <div className="flex items-center space-x-1 text-sm text-breeze-500">
+          <div className="flex items-center space-x-1 text-sm text-breeze-500 flex-shrink-0">
             <Calendar className="w-4 h-4" />
             <span>{formatDate(project.created)}</span>
           </div>
+          {project.savedTimeMins && (
+            <div className="flex items-center space-x-1 text-sm text-green-600 flex-shrink-0">
+              <Clock className="w-4 h-4" />
+              <span>{formatSavedTime(project.savedTimeMins)}</span>
+            </div>
+          )}
         </div>
         
-        <div className="flex items-center space-x-3">
+        <div className="flex items-center space-x-3 flex-shrink-0">
           {project.tags.length > 0 && (
             <div className="flex items-center space-x-1">
               <Tag className="w-4 h-4 text-breeze-400" />
-              <span className="text-xs text-breeze-500">
+              <span className="text-xs text-breeze-500 truncate max-w-32">
                 {project.tags.slice(0, 2).join(", ")}
                 {project.tags.length > 2 && ` +${project.tags.length - 2}`}
               </span>
@@ -199,22 +239,22 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
 
       {/* People Row - Requestor and Assignee */}
       <div className="flex items-center space-x-6 mb-3 text-sm text-breeze-600">
-        <div className="flex items-center space-x-2">
-          <Users className="w-4 h-4" />
-          <span className="text-breeze-500">Requestor:</span>
-          <span className="text-breeze-800">{project.requestor?.name || project.reporter.name}</span>
+        <div className="flex items-center space-x-2 min-w-0 flex-1">
+          <Users className="w-4 h-4 flex-shrink-0" />
+          <span className="text-breeze-500 flex-shrink-0">Requestor:</span>
+          <span className="text-breeze-800 truncate">{project.requestor?.name || project.reporter.name}</span>
         </div>
         {project.assignee && (
-          <div className="flex items-center space-x-2">
-            <User className="w-4 h-4" />
-            <span className="text-breeze-500">Assignee:</span>
-            <span className="text-breeze-800">{project.assignee.name}</span>
+          <div className="flex items-center space-x-2 min-w-0">
+            <User className="w-4 h-4 flex-shrink-0" />
+            <span className="text-breeze-500 flex-shrink-0">Assignee:</span>
+            <span className="text-breeze-800 truncate">{project.assignee.name}</span>
           </div>
         )}
         {!project.assignee && (
           <div className="flex items-center space-x-2">
-            <User className="w-4 h-4" />
-            <span className="text-breeze-500">Assignee:</span>
+            <User className="w-4 h-4 flex-shrink-0" />
+            <span className="text-breeze-500 flex-shrink-0">Assignee:</span>
             <span className="text-breeze-400 italic">Unassigned</span>
           </div>
         )}

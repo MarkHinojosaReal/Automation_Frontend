@@ -43,6 +43,7 @@ export interface Ticket {
   state: TicketState
   type: TicketType
   initiative?: string | null
+  savedTimeMins?: number | null
   created: number
   updated: number
   resolved?: number

@@ -163,9 +163,11 @@ export function TicketList({ tickets, compact = false, showFilters = false }: Ti
       )}
 
       {/* Tickets */}
-      <div className={compact ? "glass-card border border-white/20 rounded-xl overflow-hidden" : "grid grid-cols-1 lg:grid-cols-2 gap-4"}>
+      <div className={compact ? "glass-card border border-white/20 rounded-xl overflow-hidden" : "flex flex-wrap gap-4"}>
         {filteredTickets.map((ticket) => (
-          <TicketCard key={ticket.id} ticket={ticket} compact={compact} />
+          <div key={ticket.id} className={compact ? "w-full" : "w-full lg:w-[calc(50%-0.5rem)]"}>
+            <TicketCard ticket={ticket} compact={compact} />
+          </div>
         ))}
       </div>
 

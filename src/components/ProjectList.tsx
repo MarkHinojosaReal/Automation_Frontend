@@ -177,9 +177,11 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
       )}
 
       {/* Projects */}
-      <div className={compact ? "glass-card border border-white/20 rounded-xl overflow-hidden" : "grid grid-cols-1 lg:grid-cols-2 gap-4"}>
+      <div className={compact ? "glass-card border border-white/20 rounded-xl overflow-hidden" : "flex flex-wrap gap-4"}>
         {filteredProjects.map((project) => (
-          <ProjectCard key={project.id} project={project} compact={compact} />
+          <div key={project.id} className={compact ? "w-full" : "w-full lg:w-[calc(50%-0.5rem)]"}>
+            <ProjectCard project={project} compact={compact} />
+          </div>
         ))}
       </div>
 

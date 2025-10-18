@@ -26,7 +26,38 @@ export async function testYouTrackConnection() {
   }
 }
 
-// Test function that can be called from browser console
+// TEMPORARY: Function to count Done tasks with Automation tag
+async function countDoneAutomationTasks() {
+  try {
+    console.log('🔍 Counting Done tasks with Automation tag in ATOP project...')
+    const response = await youTrackService.getDoneAutomationTasksCount()
+    
+    if (response.error) {
+      console.error('❌ Error:', response.error)
+      return
+    }
+    
+    if (response.data && Array.isArray(response.data)) {
+      console.log(`✅ Found ${response.data.length} Done tasks with Automation tag`)
+      console.log('📋 Task details:')
+      response.data.forEach((task, index) => {
+        console.log(`${index + 1}. ${task.idReadable}: ${task.summary}`)
+        console.log(`   State: ${task.state.name}`)
+        console.log(`   Tags: ${task.tags?.map(tag => tag.name).join(', ') || 'None'}`)
+      })
+      return response.data.length
+    } else {
+      console.log('❌ No data returned')
+      return 0
+    }
+  } catch (error) {
+    console.error('❌ Failed to count tasks:', error)
+    return 0
+  }
+}
+
+// Test functions that can be called from browser console
 if (typeof window !== 'undefined') {
   (window as any).testYouTrack = testYouTrackConnection
+  (window as any).countDoneAutomationTasks = countDoneAutomationTasks
 }

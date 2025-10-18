@@ -177,6 +177,23 @@ class YouTrackService {
     return this.getProjectCustomFieldValues('ATOP', fieldName)
   }
 
+  // TEMPORARY: Count Done tasks with Automation tag in ATOP project
+  async getDoneAutomationTasksCount(): Promise<YouTrackApiResponse> {
+    try {
+      const fields = 'idReadable,summary,state(name),tags(name)'
+      const query = 'project:ATOP State:Done tag:Automation'
+      
+      if (this.config.useProxy) {
+        return this.makeRequest('/issues', { fields, query, top: '1000' })
+      } else {
+        return this.makeRequest('/issues', { fields, query, '$top': '1000' })
+      }
+    } catch (error) {
+      console.error('Failed to fetch done automation tasks:', error)
+      return { error: error instanceof Error ? error.message : 'Failed to fetch done automation tasks' }
+    }
+  }
+
   async getAllProjectCustomFields(projectId: string = 'ATOP'): Promise<YouTrackApiResponse> {
     try {
       if (this.config.useProxy) {
@@ -362,6 +379,10 @@ class YouTrackService {
     const initiativeField = issue.customFields?.find(field => field.name === 'Initiative')
     const initiative = initiativeField?.value?.name || null
 
+    // Extract saved time from custom fields
+    const savedTimeField = issue.customFields?.find(field => field.name === 'Saved Time (Mins)')
+    const savedTimeMins = savedTimeField?.value ? parseInt(savedTimeField.value.toString()) || null : null
+
     return {
       id: issue.idReadable,
       idReadable: issue.idReadable,
@@ -379,6 +400,7 @@ class YouTrackService {
       state,
       type,
       initiative,
+      savedTimeMins,
       created: issue.created || Date.now(),
       updated: issue.updated || Date.now(),
       tags: [],

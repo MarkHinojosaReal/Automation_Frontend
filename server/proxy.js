@@ -353,9 +353,14 @@ app.post('/api/metabase/inspect', async (req, res) => {
         return res.status(500).send(`Error executing script: ${errorOutput}`);
       }
       
-      // Return plaintext response
-      res.setHeader('Content-Type', 'text/plain');
-      res.send(output);
+      // Return JSON response
+      try {
+        const jsonData = JSON.parse(output);
+        res.json(jsonData);
+      } catch (parseError) {
+        console.error('Failed to parse JSON:', parseError);
+        res.status(500).send(`Failed to parse response: ${parseError.message}`);
+      }
     });
 
     python.on('error', (error) => {
