@@ -71,7 +71,12 @@ function ToolsPage() {
     setInspectorResult(null)
 
     try {
-      const response = await fetch('http://localhost:3001/api/metabase/inspect', {
+      // Use proxy server in development, direct API in production
+      const apiUrl = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:3001/api/metabase/inspect'
+        : '/api/metabase/inspect'
+      
+      const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
