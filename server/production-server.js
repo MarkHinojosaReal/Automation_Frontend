@@ -2,6 +2,9 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const path = require('path');
+const cookieParser = require('cookie-parser');
+const authMiddleware = require('./middleware/auth');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -13,6 +16,10 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(cookieParser());
+
+// Add auth routes
+app.use('/api/auth', authRoutes);
 
 // YouTrack configuration
 const YOUTRACK_BASE_URL = process.env.YOUTRACK_BASE_URL;
@@ -399,11 +406,24 @@ app.get('/api/metrics', async (req, res) => {
   }
 });
 
-// Serve static files from Gatsby build
-app.use(express.static(path.join(__dirname, '../public')));
+// Apply auth middleware to all API routes except auth routes
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/auth')) {
+    return next();
+  }
+  authMiddleware(req, res, next);
+});
 
-// Catch all handler: send back index.html for any non-API routes
-app.get('*', (_req, res) => {
+// Serve static files without auth
+app.use('/static', express.static(path.join(__dirname, '../public')));
+
+// Serve login page without auth
+app.get('/login', (req, res) => {
+  res.sendFile(path.join(__dirname, '../public/login.html'));
+});
+
+// Catch all handler: send back index.html for any non-API routes (requires auth)
+app.get('*', authMiddleware, (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 

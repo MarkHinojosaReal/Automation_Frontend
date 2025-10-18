@@ -3,6 +3,9 @@ const express = require('express');
 const cors = require('cors');
 const { spawn } = require('child_process');
 const path = require('path');
+const cookieParser = require('cookie-parser');
+const authMiddleware = require('./middleware/auth');
+const authRoutes = require('./routes/auth');
 
 const app = express();
 const PORT = 3001;
@@ -14,6 +17,10 @@ app.use(cors({
 }));
 
 app.use(express.json());
+app.use(cookieParser());
+
+// Add auth routes
+app.use('/api/auth', authRoutes);
 
 // YouTrack configuration
 const YOUTRACK_BASE_URL = 'https://realbrokerage.youtrack.cloud';
@@ -403,6 +410,14 @@ app.post('/api/youtrack/issues', async (req, res) => {
       timestamp: new Date().toISOString()
     });
   }
+});
+
+// Apply auth middleware to all API routes except auth routes
+app.use('/api', (req, res, next) => {
+  if (req.path.startsWith('/auth')) {
+    return next();
+  }
+  authMiddleware(req, res, next);
 });
 
 // Generic proxy endpoint

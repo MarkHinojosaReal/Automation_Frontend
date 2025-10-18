@@ -2,7 +2,7 @@ services:
   - type: web
     name: youtrack-dashboard
     env: node
-    buildCommand: npm install && npm run build && pip install -r requirements.txt
+    buildCommand: npm install && npm run build
     startCommand: npm start
     envVars:
       - key: NODE_ENV
@@ -10,4 +10,10 @@ services:
       - key: YOUTRACK_BASE_URL
         value: https://realbrokerage.youtrack.cloud
       - key: YOUTRACK_TOKEN
+        sync: false # This will be set manually in Render dashboard for security
+      - key: GOOGLE_CLIENT_ID
+        sync: false # This will be set manually in Render dashboard for security
+      - key: GOOGLE_CLIENT_SECRET
+        sync: false # This will be set manually in Render dashboard for security
+      - key: JWT_SECRET
         sync: false # This will be set manually in Render dashboard for security
