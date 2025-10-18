@@ -330,47 +330,62 @@ app.post('/api/metabase/inspect', async (req, res) => {
       return res.status(400).json({ error: 'Card ID is required' });
     }
 
-    // Path to the Python script
-    const scriptPath = path.join(__dirname, '..', 'metabase_inspector.py');
+    // Metabase API configuration
+    const METABASE_BASE_URL = 'https://metabase.therealbrokerage.com';
+    const METABASE_API_KEY = 'mb_OA03ReuCiuld1BeLyMbuZo/QV60U7YBchhtGxj8xemk=';
     
-    // Spawn Python process
-    const python = spawn('python3', [scriptPath, cardId]);
-    
-    let output = '';
-    let errorOutput = '';
-
-    python.stdout.on('data', (data) => {
-      output += data.toString();
-    });
-
-    python.stderr.on('data', (data) => {
-      errorOutput += data.toString();
-    });
-
-    python.on('close', (code) => {
-      if (code !== 0) {
-        console.error('Python script error:', errorOutput);
-        return res.status(500).send(`Error executing script: ${errorOutput}`);
-      }
-      
-      // Return JSON response
-      try {
-        const jsonData = JSON.parse(output);
-        res.json(jsonData);
-      } catch (parseError) {
-        console.error('Failed to parse JSON:', parseError);
-        res.status(500).send(`Failed to parse response: ${parseError.message}`);
+    // Make request to Metabase API
+    const url = `${METABASE_BASE_URL}/api/card/${cardId}?ignore_view=true`;
+    const response = await fetch(url, {
+      method: 'GET',
+      headers: {
+        'X-API-Key': METABASE_API_KEY,
+        'Accept': 'application/json',
+        'Content-Type': 'application/json'
       }
     });
 
-    python.on('error', (error) => {
-      console.error('Failed to start Python process:', error);
-      res.status(500).send(`Failed to execute script: ${error.message}`);
-    });
+    if (!response.ok) {
+      throw new Error(`Metabase API error: ${response.status} ${response.statusText}`);
+    }
 
+    const data = await response.json();
+    
+    // Extract and format the response
+    const result = {
+      card_id: cardId,
+      card_title: data.name || 'Unknown',
+      sql_query: '',
+      columns: []
+    };
+    
+    // Extract SQL Query
+    if (data.dataset_query && data.dataset_query.native) {
+      const nativeQuery = data.dataset_query.native;
+      if (nativeQuery.query) {
+        result.sql_query = nativeQuery.query;
+      } else {
+        result.sql_query = "No 'query' field found in native dataset_query";
+      }
+    } else {
+      result.sql_query = "No native SQL query found in dataset_query";
+    }
+    
+    // Extract Columns
+    if (data.result_metadata) {
+      const columns = data.result_metadata;
+      result.columns = columns.map((col, index) => ({
+        index: index + 1,
+        name: col.name || `column_${index}`,
+        type: col.base_type || 'Unknown'
+      }));
+    }
+    
+    res.json(result);
+    
   } catch (error) {
     console.error('Metabase inspection error:', error);
-    res.status(500).send(`Server error: ${error.message}`);
+    res.status(500).json({ error: error.message });
   }
 });
 
