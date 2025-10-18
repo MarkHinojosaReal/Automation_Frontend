@@ -424,18 +424,24 @@ app.get('/api/metrics', async (req, res) => {
   }
 });
 
-// Serve static files without auth
-app.use('/static', express.static(path.join(__dirname, '../public')));
+// Serve static files from the public directory built by Gatsby
+app.use(express.static(path.join(__dirname, '../public'), {
+  index: false // Don't serve index.html automatically, we'll handle routing
+}));
 
 // Serve login page without auth
 app.get('/login', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/login.html'));
+  const loginPath = path.join(__dirname, '../public/login.html');
+  console.log(`📄 Serving login page from: ${loginPath}`);
+  res.sendFile(loginPath);
 });
 
-// Middleware to check authentication for all other routes
+// Middleware to check authentication for all other routes (HTML pages only)
 app.use((req, res, next) => {
-  // Skip auth for login page and static files
-  if (req.path === '/login' || req.path.startsWith('/static/') || req.path.startsWith('/api/auth')) {
+  // Skip auth for login page, static files (js, css, etc), and auth API
+  if (req.path === '/login' || 
+      req.path.startsWith('/api/auth') ||
+      req.path.match(/\.(js|css|png|jpg|jpeg|gif|svg|ico|woff|woff2|ttf|json)$/)) {
     return next();
   }
   
@@ -478,10 +484,15 @@ app.use((err, _req, res, _next) => {
 
 // Start server
 app.listen(PORT, () => {
+  const publicPath = path.join(__dirname, '../public');
+  const loginPath = path.join(publicPath, 'login.html');
+  
   console.log(`🌟 Production Server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🔗 YouTrack Base: ${YOUTRACK_BASE_URL}`);
-  console.log(`🏠 Serving static files from: ${path.join(__dirname, '../public')}`);
+  console.log(`🏠 Serving static files from: ${publicPath}`);
+  console.log(`🔐 Login page path: ${loginPath}`);
+  console.log(`🔒 Auth middleware enabled for all routes except /login and /api/auth`);
 });
 
 module.exports = app;
