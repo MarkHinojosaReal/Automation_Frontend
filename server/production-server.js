@@ -422,8 +422,37 @@ app.get('/login', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/login.html'));
 });
 
-// Catch all handler: send back index.html for any non-API routes (requires auth)
-app.get('*', authMiddleware, (req, res) => {
+// Middleware to check authentication for all other routes
+app.use((req, res, next) => {
+  // Skip auth for login page and static files
+  if (req.path === '/login' || req.path.startsWith('/static/') || req.path.startsWith('/api/auth')) {
+    return next();
+  }
+  
+  // Check for auth token
+  const token = req.cookies.auth_token;
+  if (!token) {
+    return res.redirect('/login');
+  }
+  
+  try {
+    const jwt = require('jsonwebtoken');
+    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    
+    // Check if email domain is @therealbrokerage.com
+    if (!decoded.email || !decoded.email.endsWith('@therealbrokerage.com')) {
+      return res.redirect('/login');
+    }
+    
+    req.user = decoded;
+    next();
+  } catch (error) {
+    return res.redirect('/login');
+  }
+});
+
+// Serve all other routes (protected)
+app.get('*', (req, res) => {
   res.sendFile(path.join(__dirname, '../public/index.html'));
 });
 

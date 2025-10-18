@@ -1,5 +1,6 @@
 import React, { useMemo } from "react"
 import { Layout } from "../components/Layout"
+import { AuthGuard } from "../components/AuthGuard"
 import { StatsCard } from "../components/StatsCard"
 import { ChartCard } from "../components/ChartCard"
 import { LoadingSpinner } from "../components/LoadingSpinner"
@@ -19,6 +20,14 @@ import {
 import type { DashboardStats } from "../types"
 
 function IndexPage() {
+  return (
+    <AuthGuard>
+      <IndexPageContent />
+    </AuthGuard>
+  )
+}
+
+function IndexPageContent() {
   const { tickets, loading, error, refetch } = useYouTrack()
   const { tickets: projects, loading: projectsLoading } = useYouTrackProjects()
   

@@ -1,5 +1,6 @@
 import React from "react"
 import { Layout } from "../components/Layout"
+import { AuthGuard } from "../components/AuthGuard"
 import { StatsCard } from "../components/StatsCard"
 import { ChartCard } from "../components/ChartCard"
 import { ReportChart } from "../components/ReportChart"
@@ -17,7 +18,7 @@ import {
   mockTimeSeriesData 
 } from "../utils/mockData"
 
-function ReportsPage() {
+function ReportsPageContent() {
   return (
     <Layout title="Reports & Analytics">
       <div className="flex items-center justify-between mb-6">
@@ -154,6 +155,14 @@ function ReportsPage() {
         </div>
       </div>
     </Layout>
+  )
+}
+
+function ReportsPage() {
+  return (
+    <AuthGuard>
+      <ReportsPageContent />
+    </AuthGuard>
   )
 }
 

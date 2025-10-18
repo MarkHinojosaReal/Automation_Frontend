@@ -8,8 +8,11 @@ import {
   Zap,
   Play,
   BookOpen,
-  BarChart3
+  BarChart3,
+  LogOut,
+  User
 } from "lucide-react"
+import { useAuth } from "../contexts/AuthContext"
 
 interface SidebarItemProps {
   to: string
@@ -46,6 +49,14 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const currentPath = typeof window !== "undefined" ? window.location.pathname : "/"
+  const { user, logout } = useAuth()
+  
+  const handleLogout = async () => {
+    await logout()
+    if (onClose) {
+      onClose()
+    }
+  }
   
   const menuItems = [
     { to: "/", icon: <Home className="w-5 h-5" />, label: "Home" },
@@ -99,8 +110,32 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
         ))}
       </nav>
       
-      {/* Decorative gradient at bottom */}
-      <div className="absolute bottom-0 left-0 right-0 h-32 bg-gradient-to-t from-ocean-900/20 to-transparent pointer-events-none" />
+      {/* User Info & Logout - At bottom of sidebar */}
+      <div className="absolute bottom-0 left-0 right-0 p-4 bg-gradient-to-t from-ocean-900/50 to-transparent backdrop-blur-sm">
+        {user && (
+          <div className="space-y-3">
+            {/* User Info */}
+            <div className="flex items-center space-x-3 px-3 py-2 bg-white/5 rounded-lg">
+              <div className="w-8 h-8 bg-gradient-to-br from-accent-400 to-accent-600 rounded-full flex items-center justify-center flex-shrink-0">
+                <User className="w-4 h-4 text-white" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-white text-sm font-medium truncate">{user.name}</p>
+                <p className="text-white/50 text-xs truncate">{user.email}</p>
+              </div>
+            </div>
+            
+            {/* Logout Button */}
+            <button
+              onClick={handleLogout}
+              className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 hover:text-red-200 rounded-lg transition-colors"
+            >
+              <LogOut className="w-4 h-4" />
+              <span className="text-sm font-medium">Logout</span>
+            </button>
+          </div>
+        )}
+      </div>
     </aside>
   )
 }

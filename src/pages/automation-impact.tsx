@@ -1,5 +1,6 @@
 import React, { useState } from "react"
 import { Layout } from "../components/Layout"
+import { AuthGuard } from "../components/AuthGuard"
 import { 
   TrendingUp, 
   Clock, 
@@ -88,7 +89,7 @@ const automationProjects: AutomationProject[] = [
   }
 ]
 
-function AutomationImpactPage() {
+function AutomationImpactPageContent() {
   const [filter, setFilter] = useState<string>('all')
   const [searchTerm, setSearchTerm] = useState('')
 
@@ -303,6 +304,14 @@ function AutomationImpactPage() {
         )}
       </div>
     </Layout>
+  )
+}
+
+function AutomationImpactPage() {
+  return (
+    <AuthGuard>
+      <AutomationImpactPageContent />
+    </AuthGuard>
   )
 }
 

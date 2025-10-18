@@ -1,8 +1,10 @@
 import React, { useState, useEffect } from "react"
 import { Layout } from "../components/Layout"
+import { AuthGuard } from "../components/AuthGuard"
 import { FormField, TextInput, TextArea, Select } from "../components/FormField"
 import { SuccessModal } from "../components/SuccessModal"
 import { youTrackService } from "../services/youtrack"
+import { useAuth } from "../contexts/AuthContext"
 import { 
   Send, 
   Paperclip, 
@@ -31,11 +33,13 @@ interface InitiativeOption {
   value: string
 }
 
-function RequestPage() {
+function RequestPageContent() {
+  const { user } = useAuth()
+  
   const [formData, setFormData] = useState<TicketFormData>({
     priority: "medium",
     type: "new-automation",
-    email: "",
+    email: user?.email || "",
     projectName: "",
     projectDescription: "",
     manualTimeInvestment: "",
@@ -47,6 +51,13 @@ function RequestPage() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [ticketNumber, setTicketNumber] = useState("")
+  
+  // Update email when user info is loaded
+  useEffect(() => {
+    if (user?.email) {
+      setFormData(prev => ({ ...prev, email: user.email }))
+    }
+  }, [user])
   const [errors, setErrors] = useState<Record<string, string>>({})
   const [initiatives, setInitiatives] = useState<InitiativeOption[]>([])
   const [loadingInitiatives, setLoadingInitiatives] = useState(true)
@@ -195,9 +206,7 @@ function RequestPage() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
     
-    if (!formData.email.trim()) {
-      newErrors.email = "Email is required"
-    }
+    // Email is auto-populated from user account, no need to validate
     if (!formData.projectName.trim()) {
       newErrors.projectName = "Project name is required"
     }
@@ -380,7 +389,7 @@ function RequestPage() {
                     </FormField>
                   </div>
 
-                  <FormField label="Real Email Address" id="email" required error={errors.email}>
+                  <FormField label="Your Email Address" id="email" required error={errors.email}>
                     <TextInput
                       id="email"
                       name="email"
@@ -389,6 +398,7 @@ function RequestPage() {
                       value={formData.email}
                       onChange={handleInputChange}
                       required
+                      disabled
                     />
                   </FormField>
 
@@ -675,6 +685,14 @@ function RequestPage() {
         )}
       </div>
     </Layout>
+  )
+}
+
+function RequestPage() {
+  return (
+    <AuthGuard>
+      <RequestPageContent />
+    </AuthGuard>
   )
 }
 

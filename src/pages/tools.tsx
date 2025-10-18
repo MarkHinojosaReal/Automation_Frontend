@@ -1,5 +1,6 @@
 import React, { useState } from "react"
 import { Layout } from "../components/Layout"
+import { AuthGuard } from "../components/AuthGuard"
 import { Link } from "gatsby"
 import { 
   Search,
@@ -25,7 +26,7 @@ interface Tool {
   href?: string
 }
 
-function ToolsPage() {
+function ToolsPageContent() {
   // Metabase Card Inspector state
   const [cardId, setCardId] = useState<string>("")
   const [inspectorResult, setInspectorResult] = useState<any>(null)
@@ -656,6 +657,14 @@ Cost impact calculated using $70k annual salary ($35/hour).`
         </div>
       </div>
     </Layout>
+  )
+}
+
+function ToolsPage() {
+  return (
+    <AuthGuard>
+      <ToolsPageContent />
+    </AuthGuard>
   )
 }
 

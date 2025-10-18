@@ -1,5 +1,10 @@
 import React from "react"
 import type { GatsbySSR } from "gatsby"
+import { AuthProvider } from "./src/contexts/AuthContext"
+
+export const wrapRootElement = ({ element }: { element: React.ReactNode }) => {
+  return <AuthProvider>{element}</AuthProvider>
+}
 
 export const onRenderBody: GatsbySSR["onRenderBody"] = ({ setHtmlAttributes, setHeadComponents }) => {
   setHtmlAttributes({ lang: "en" })

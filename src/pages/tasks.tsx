@@ -1,11 +1,20 @@
 import React from "react"
 import { Layout } from "../components/Layout"
+import { AuthGuard } from "../components/AuthGuard"
 import { TicketList } from "../components/TicketList"
 import { LoadingSpinner } from "../components/LoadingSpinner"
 import { ErrorMessage } from "../components/ErrorMessage"
 import { useYouTrack } from "../hooks/useYouTrack"
 
 function TicketsPage() {
+  return (
+    <AuthGuard>
+      <TicketsPageContent />
+    </AuthGuard>
+  )
+}
+
+function TicketsPageContent() {
   const { tickets, loading, error, refetch } = useYouTrack()
 
   if (loading) {

@@ -1,5 +1,6 @@
 import React, { useState } from "react"
 import { Layout } from "../components/Layout"
+import { AuthGuard } from "../components/AuthGuard"
 import { 
   BookOpen, 
   Code, 
@@ -447,7 +448,7 @@ function CategorySection({ category, endpoints }: { category: string, endpoints:
   )
 }
 
-export default function ApiDocs() {
+function ApiDocsContent() {
   return (
     <Layout title="API Docs">
       <div className="max-w-6xl mx-auto">
@@ -528,3 +529,13 @@ export default function ApiDocs() {
     </Layout>
   )
 }
+
+function ApiDocs() {
+  return (
+    <AuthGuard>
+      <ApiDocsContent />
+    </AuthGuard>
+  )
+}
+
+export default ApiDocs

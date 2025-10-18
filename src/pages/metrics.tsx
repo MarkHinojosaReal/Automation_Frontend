@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from "react"
 import { Layout } from "../components/Layout"
+import { AuthGuard } from "../components/AuthGuard"
 import { LoadingSpinner } from "../components/LoadingSpinner"
 import { ErrorMessage } from "../components/ErrorMessage"
 import { 
@@ -55,7 +56,7 @@ interface MetricsData {
   }>
 }
 
-function MetricsPage() {
+function MetricsPageContent() {
   const [data, setData] = useState<MetricsData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState<string | null>(null)
@@ -431,6 +432,14 @@ function MetricsPage() {
         </div>
       </div>
     </Layout>
+  )
+}
+
+function MetricsPage() {
+  return (
+    <AuthGuard>
+      <MetricsPageContent />
+    </AuthGuard>
   )
 }
 

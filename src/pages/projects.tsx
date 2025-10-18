@@ -1,11 +1,20 @@
 import React from "react"
 import { Layout } from "../components/Layout"
+import { AuthGuard } from "../components/AuthGuard"
 import { ProjectList } from "../components/ProjectList"
 import { LoadingSpinner } from "../components/LoadingSpinner"
 import { ErrorMessage } from "../components/ErrorMessage"
 import { useYouTrackProjects } from "../hooks/useYouTrack"
 
 function ProjectsPage() {
+  return (
+    <AuthGuard>
+      <ProjectsPageContent />
+    </AuthGuard>
+  )
+}
+
+function ProjectsPageContent() {
   const { tickets: projects, loading, error, refetch } = useYouTrackProjects()
 
   if (loading) {
