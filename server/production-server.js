@@ -425,15 +425,17 @@ app.get('/api/metrics', async (req, res) => {
 });
 
 // Serve static files from the public directory built by Gatsby
-// Note: server is in src/server/, so we need to go up two levels to reach public/
-const publicDir = path.join(__dirname, '../../public');
+// Note: Gatsby builds to /opt/render/project/src/public
+// Server is at /opt/render/project/src/server/production-server.js
+// So we go up one level: server/ -> src/, then access public/
+const publicDir = path.join(__dirname, '../public');
 app.use(express.static(publicDir, {
   index: false // Don't serve index.html automatically, we'll handle routing
 }));
 
-// Serve login page without auth
+// Serve login page without auth (Gatsby builds this to login/index.html)
 app.get('/login', (req, res) => {
-  const loginPath = path.join(publicDir, 'login.html');
+  const loginPath = path.join(publicDir, 'login', 'index.html');
   console.log(`📄 Serving login page from: ${loginPath}`);
   res.sendFile(loginPath);
 });
@@ -486,13 +488,24 @@ app.use((err, _req, res, _next) => {
 
 // Start server
 app.listen(PORT, () => {
-  const loginPath = path.join(publicDir, 'login.html');
+  const fs = require('fs');
+  const loginPath = path.join(publicDir, 'login', 'index.html');
+  const indexPath = path.join(publicDir, 'index.html');
   
   console.log(`🌟 Production Server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🔗 YouTrack Base: ${YOUTRACK_BASE_URL}`);
-  console.log(`🏠 Serving static files from: ${publicDir}`);
+  console.log(`🏠 Public directory: ${publicDir}`);
+  console.log(`📁 Public dir exists: ${fs.existsSync(publicDir)}`);
+  
+  if (fs.existsSync(publicDir)) {
+    const files = fs.readdirSync(publicDir);
+    console.log(`📂 Files in public/: ${files.slice(0, 10).join(', ')}${files.length > 10 ? '...' : ''}`);
+  }
+  
   console.log(`🔐 Login page path: ${loginPath}`);
+  console.log(`📄 Login page exists: ${fs.existsSync(loginPath)}`);
+  console.log(`📄 Index page exists: ${fs.existsSync(indexPath)}`);
   console.log(`🔒 Auth middleware enabled for all routes except /login and /api/auth`);
 });
 
