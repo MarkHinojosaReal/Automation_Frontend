@@ -1,6 +1,7 @@
 // Admin users with full access to all pages
 export const ADMIN_EMAILS = [
   'mark.hinojosa@therealbrokerage.com',
+  'taylor.potter@therealbrokerage.com',
   // Add more admin emails here
 ]
 
