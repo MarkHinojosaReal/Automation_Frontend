@@ -425,13 +425,15 @@ app.get('/api/metrics', async (req, res) => {
 });
 
 // Serve static files from the public directory built by Gatsby
-app.use(express.static(path.join(__dirname, '../public'), {
+// Note: server is in src/server/, so we need to go up two levels to reach public/
+const publicDir = path.join(__dirname, '../../public');
+app.use(express.static(publicDir, {
   index: false // Don't serve index.html automatically, we'll handle routing
 }));
 
 // Serve login page without auth
 app.get('/login', (req, res) => {
-  const loginPath = path.join(__dirname, '../public/login.html');
+  const loginPath = path.join(publicDir, 'login.html');
   console.log(`📄 Serving login page from: ${loginPath}`);
   res.sendFile(loginPath);
 });
@@ -469,7 +471,7 @@ app.use((req, res, next) => {
 
 // Serve all other routes (protected)
 app.get('*', (req, res) => {
-  res.sendFile(path.join(__dirname, '../public/index.html'));
+  res.sendFile(path.join(publicDir, 'index.html'));
 });
 
 // Error handling middleware
@@ -484,13 +486,12 @@ app.use((err, _req, res, _next) => {
 
 // Start server
 app.listen(PORT, () => {
-  const publicPath = path.join(__dirname, '../public');
-  const loginPath = path.join(publicPath, 'login.html');
+  const loginPath = path.join(publicDir, 'login.html');
   
   console.log(`🌟 Production Server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🔗 YouTrack Base: ${YOUTRACK_BASE_URL}`);
-  console.log(`🏠 Serving static files from: ${publicPath}`);
+  console.log(`🏠 Serving static files from: ${publicDir}`);
   console.log(`🔐 Login page path: ${loginPath}`);
   console.log(`🔒 Auth middleware enabled for all routes except /login and /api/auth`);
 });
