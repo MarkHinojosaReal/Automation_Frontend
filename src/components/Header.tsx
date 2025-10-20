@@ -11,8 +11,8 @@ export function Header({ title = "YouTrack Dashboard" }: HeaderProps) {
       <div className="flex items-center justify-between h-full px-6">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-3">
-            <div className="w-10 h-10 bg-gradient-to-br from-ocean-400 to-ocean-600 rounded-xl flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-xs">ATOP</span>
+            <div className="font-mono font-bold text-sm tracking-tight text-breeze-800">
+              AUTOMATION OPS
             </div>
             <h1 className="text-xl font-semibold text-breeze-800">{title}</h1>
           </div>

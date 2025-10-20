@@ -10,10 +10,10 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-white mx-auto mb-4"></div>
-          <p className="text-white text-lg">Checking authentication...</p>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mx-auto mb-4"></div>
+          <p className="text-gray-800 text-lg">Checking authentication...</p>
         </div>
       </div>
     )
@@ -25,9 +25,9 @@ export function AuthGuard({ children }: AuthGuardProps) {
       window.location.href = '/login'
     }
     return (
-      <div className="min-h-screen bg-gradient-to-br from-blue-600 to-purple-700 flex items-center justify-center">
+      <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">
-          <p className="text-white text-lg">Redirecting to login...</p>
+          <p className="text-gray-800 text-lg">Redirecting to login...</p>
         </div>
       </div>
     )

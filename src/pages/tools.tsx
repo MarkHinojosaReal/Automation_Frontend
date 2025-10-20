@@ -1,6 +1,7 @@
 import React, { useState } from "react"
 import { Layout } from "../components/Layout"
 import { AuthGuard } from "../components/AuthGuard"
+import { ProtectedRoute } from "../components/ProtectedRoute"
 import { Link } from "gatsby"
 import { 
   Search,
@@ -663,7 +664,9 @@ Cost impact calculated using $70k annual salary ($35/hour).`
 function ToolsPage() {
   return (
     <AuthGuard>
-      <ToolsPageContent />
+      <ProtectedRoute requiredPath="/tools">
+        <ToolsPageContent />
+      </ProtectedRoute>
     </AuthGuard>
   )
 }

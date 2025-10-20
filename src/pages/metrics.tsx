@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from "react"
 import { Layout } from "../components/Layout"
 import { AuthGuard } from "../components/AuthGuard"
+import { ProtectedRoute } from "../components/ProtectedRoute"
 import { LoadingSpinner } from "../components/LoadingSpinner"
 import { ErrorMessage } from "../components/ErrorMessage"
 import { 
@@ -438,7 +439,9 @@ function MetricsPageContent() {
 function MetricsPage() {
   return (
     <AuthGuard>
-      <MetricsPageContent />
+      <ProtectedRoute requiredPath="/metrics">
+        <MetricsPageContent />
+      </ProtectedRoute>
     </AuthGuard>
   )
 }

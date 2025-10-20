@@ -1,18 +1,17 @@
-import React from "react"
+import React, { useMemo } from "react"
 import { Link } from "gatsby"
 import { 
   Home, 
   Ticket, 
   Folder,
   Bot,
-  Zap,
-  Play,
-  BookOpen,
   BarChart3,
   LogOut,
-  User
+  User,
+  Wrench
 } from "lucide-react"
 import { useAuth } from "../contexts/AuthContext"
+import { getAccessiblePages } from "../config/permissions"
 
 interface SidebarItemProps {
   to: string
@@ -58,14 +57,28 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     }
   }
   
-  const menuItems = [
-    { to: "/", icon: <Home className="w-5 h-5" />, label: "Home" },
-    { to: "/projects", icon: <Folder className="w-5 h-5" />, label: "Projects" },
-    { to: "/tasks", icon: <Ticket className="w-5 h-5" />, label: "Tasks" },
-    { to: "/metrics", icon: <BarChart3 className="w-5 h-5" />, label: "Metrics" },
-    { to: "/tools", icon: <Play className="w-5 h-5" />, label: "Tools" },
-    { to: "/request", icon: <Bot className="w-5 h-5" />, label: "New Request", accent: true }
-  ]
+  // Map of page paths to their icons
+  const iconMap: Record<string, React.ReactNode> = {
+    '/': <Home className="w-5 h-5" />,
+    '/projects': <Folder className="w-5 h-5" />,
+    '/tasks': <Ticket className="w-5 h-5" />,
+    '/request': <Bot className="w-5 h-5" />,
+    '/metrics': <BarChart3 className="w-5 h-5" />,
+    '/tools': <Wrench className="w-5 h-5" />,
+  }
+  
+  // Get menu items based on user permissions
+  const menuItems = useMemo(() => {
+    if (!user) return []
+    
+    const accessiblePages = getAccessiblePages(user.email)
+    return accessiblePages.map(page => ({
+      to: page.path,
+      icon: iconMap[page.path] || <Home className="w-5 h-5" />,
+      label: page.label,
+      accent: page.path === '/request' // Highlight the New Request button
+    }))
+  }, [user])
 
   // Helper function to determine if a menu item is active
   const isActive = (itemPath: string) => {
@@ -88,9 +101,9 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     } lg:translate-x-0`}>
       {/* Logo Section - Hidden on mobile (shown in header) */}
       <div className="p-4 pt-6 pb-6 justify-center hidden lg:flex">
-        <div className="w-12 h-12 bg-gradient-to-br from-ocean-400 to-ocean-600 rounded-xl flex items-center justify-center shadow-lg">
-          <span className="text-white font-bold text-sm">ATOP</span>
-        </div>
+        <h1 className="text-white font-mono font-bold text-lg tracking-tight">
+          AUTOMATION OPS
+        </h1>
       </div>
       
       {/* Mobile logo/header spacing */}
@@ -116,9 +129,17 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
           <div className="space-y-3">
             {/* User Info */}
             <div className="flex items-center space-x-3 px-3 py-2 bg-white/5 rounded-lg">
-              <div className="w-8 h-8 bg-gradient-to-br from-accent-400 to-accent-600 rounded-full flex items-center justify-center flex-shrink-0">
-                <User className="w-4 h-4 text-white" />
-              </div>
+              {user.picture ? (
+                <img 
+                  src={user.picture} 
+                  alt={user.name}
+                  className="w-8 h-8 rounded-full flex-shrink-0"
+                />
+              ) : (
+                <div className="w-8 h-8 bg-gradient-to-br from-accent-400 to-accent-600 rounded-full flex items-center justify-center flex-shrink-0">
+                  <User className="w-4 h-4 text-white" />
+                </div>
+              )}
               <div className="flex-1 min-w-0">
                 <p className="text-white text-sm font-medium truncate">{user.name}</p>
                 <p className="text-white/50 text-xs truncate">{user.email}</p>

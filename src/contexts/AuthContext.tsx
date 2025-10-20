@@ -1,9 +1,11 @@
 import React, { createContext, useContext, useState, useEffect } from 'react'
+import { getUserRole, hasPageAccess, type UserRole } from '../config/permissions'
 
 interface User {
   email: string
   name: string
   picture?: string
+  role?: UserRole
 }
 
 interface AuthContextType {
@@ -11,6 +13,8 @@ interface AuthContextType {
   loading: boolean
   login: (user: User) => void
   logout: () => void
+  hasAccess: (pagePath: string) => boolean
+  isAdmin: boolean
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -88,7 +92,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       
       if (response.ok) {
         const data = await response.json()
-        setUser(data.user)
+        const userWithRole = {
+          ...data.user,
+          role: getUserRole(data.user.email)
+        }
+        setUser(userWithRole)
       } else {
         setUser(null)
       }
@@ -101,7 +109,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }
 
   const login = (user: User) => {
-    setUser(user)
+    const userWithRole = {
+      ...user,
+      role: getUserRole(user.email)
+    }
+    setUser(userWithRole)
   }
 
   const logout = async () => {
@@ -123,8 +135,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }
 
+  const hasAccess = (pagePath: string): boolean => {
+    if (!user) return false
+    return hasPageAccess(user.email, pagePath)
+  }
+
+  const isAdmin = user?.role === 'admin'
+
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, loading, login, logout, hasAccess, isAdmin }}>
       {children}
     </AuthContext.Provider>
   )

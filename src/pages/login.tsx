@@ -1,4 +1,6 @@
 import React, { useEffect } from 'react'
+import { KeyRound } from 'lucide-react'
+import { getUserRole } from '../config/permissions'
 
 // Declare Google Identity Services types
 declare global {
@@ -71,7 +73,13 @@ export default function LoginPage() {
     .then(response => response.json())
     .then(data => {
       if (data.success) {
-        window.location.href = '/'
+        // Redirect based on user role
+        const userRole = getUserRole(data.user.email)
+        if (userRole === 'admin') {
+          window.location.href = '/'
+        } else {
+          window.location.href = '/tasks'
+        }
       } else {
         showError(data.error || 'Authentication failed')
       }
@@ -94,6 +102,13 @@ export default function LoginPage() {
     <div className="min-h-screen bg-gray-100 flex items-center justify-center">
       <div className="bg-white p-8 rounded-xl shadow-md max-w-md w-full mx-4">
         <div className="text-center">
+          {/* Key Icon */}
+          <div className="flex justify-center mb-6">
+            <div className="bg-gray-900 rounded-full p-6 inline-flex items-center justify-center -mt-16">
+              <KeyRound className="w-10 h-10 text-white" strokeWidth={2} />
+            </div>
+          </div>
+          
           <div className="text-3xl font-bold text-gray-800 mb-2">Login</div>
           <p className="text-sm text-gray-500 mb-8">Only @therealbrokerage.com accounts are currently supported</p>
           
@@ -103,7 +118,9 @@ export default function LoginPage() {
           >
           </div>
           
-          <div id="gsi-button"></div>
+          <div className="flex justify-center">
+            <div id="gsi-button"></div>
+          </div>
         </div>
       </div>
     </div>

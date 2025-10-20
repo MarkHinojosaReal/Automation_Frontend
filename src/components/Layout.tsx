@@ -38,8 +38,8 @@ export function Layout({ children, title }: LayoutProps) {
       <div className="lg:hidden bg-ocean-600 shadow-lg relative z-50">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-3">
-            <div className="w-8 h-8 bg-gradient-to-br from-ocean-400 to-ocean-600 rounded-lg flex items-center justify-center shadow-lg">
-              <span className="text-white font-bold text-xs">ATOP</span>
+            <div className="font-mono font-bold text-xs tracking-tight text-white">
+              AUTOMATION OPS
             </div>
             {title && <h1 className="text-white font-semibold text-lg">{title}</h1>}
           </div>
