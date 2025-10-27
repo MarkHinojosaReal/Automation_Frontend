@@ -2,6 +2,13 @@
 export const ADMIN_EMAILS = [
   'mark.hinojosa@therealbrokerage.com',
   'taylor.potter@therealbrokerage.com',
+  'jenna.rozenblat@therealbrokerage.com',
+  'guru.jorepalli@therealbrokerage.com',
+  'akash.bawa@therealbrokerage.com',
+  'nanda.anumolu@therealbrokerage.com',
+  'rahul.dasari@therealbrokerage.com',
+  'sreekanth.pogula@therealbrokerage.com',
+  'soham.nehra@therealbrokerage.com',
   // Add more admin emails here
 ]
 

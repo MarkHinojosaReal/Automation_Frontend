@@ -41,10 +41,23 @@ If you want to use Infrastructure as Code, Render will automatically detect the 
 Required in production:
 - `YOUTRACK_TOKEN`: Your YouTrack API token
 - `YOUTRACK_BASE_URL`: YouTrack instance URL (default: https://realbrokerage.youtrack.cloud)
+- `GOOGLE_CLIENT_ID`: Google OAuth client ID for authentication
+- `GOOGLE_CLIENT_SECRET`: Google OAuth client secret
+- `JWT_SECRET`: Secret key for JWT token generation
+- `METABASE_API_KEY`: Metabase API key for analytics and reporting
+- `ARRAKIS_API_KEY`: Arrakis API key for bulk transaction operations
+
+Database (Postgres):
+- `POSTGRES_HOST`: Postgres database host
+- `POSTGRES_PORT`: Postgres database port (default: 5432)
+- `POSTGRES_DATABASE`: Postgres database name
+- `POSTGRES_USER`: Postgres username
+- `POSTGRES_PASSWORD`: Postgres password
 
 Optional:
 - `PORT`: Server port (Render sets this automatically)
 - `NODE_ENV`: Environment (should be "production")
+- `METABASE_BASE_URL`: Metabase instance URL (default: https://metabase.therealbrokerage.com)
 
 ## Local Testing of Production Build
 
@@ -67,7 +80,30 @@ npm start
 ✅ **Health check endpoint** (`/health`)  
 ✅ **Error handling and logging**  
 
-## Support
+## Tools Available
+
+The application includes several automation tools:
+
+### 1. Metabase Card Inspector
+- Inspect Metabase cards to view SQL queries and column metadata
+- Useful for debugging and analysis
+- Endpoint: `/api/metabase/inspect`
+
+### 2. Project Report Generator
+- Generate comprehensive reports showing completed and upcoming automation projects
+- Includes time savings and cost impact analysis
+- Endpoint: `/api/youtrack/issues` (with custom queries)
+
+### 3. Bulk Transaction Termination
+- Automatically terminate transactions from Metabase query results
+- Fetches data from Metabase card 5342
+- Extracts transaction IDs from URLs
+- Marks each transaction as termination-requested and terminated
+- Generates detailed report of successes and failures
+- Endpoint: `/api/tools/terminate-transactions`
+- **Requirements**: `METABASE_API_KEY` and `ARRAKIS_API_KEY` environment variables
+
+## Application Features
 
 The application includes:
 - Projects filtering (ATOP only)
@@ -76,6 +112,8 @@ The application includes:
 - Request automation form
 - Responsive design
 - Real-time data fetching
+- Role-based access control (admin vs regular users)
+- Google OAuth authentication
 
 ## Security Notes
 

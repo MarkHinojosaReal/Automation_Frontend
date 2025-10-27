@@ -31,3 +31,5 @@ services:
         value: https://metabase.therealbrokerage.com
       - key: METABASE_API_KEY
         sync: false # This will be set manually in Render dashboard for security
+      - key: ARRAKIS_API_KEY
+        sync: false # This will be set manually in Render dashboard for security

@@ -12,7 +12,9 @@ import {
   Database,
   ChevronRight,
   FileText,
-  Download
+  Download,
+  XCircle,
+  AlertTriangle
 } from "lucide-react"
 import { youTrackService } from "../services/youtrack"
 
@@ -40,6 +42,11 @@ function ToolsPageContent() {
   const [generatingReport, setGeneratingReport] = useState<boolean>(false)
   const [reportError, setReportError] = useState<string>("")
 
+  // Bulk Transaction Termination state
+  const [terminationResult, setTerminationResult] = useState<any>(null)
+  const [terminating, setTerminating] = useState<boolean>(false)
+  const [terminationError, setTerminationError] = useState<string>("")
+
   // Tools directory
   const tools: Tool[] = [
     {
@@ -59,6 +66,15 @@ function ToolsPageContent() {
       category: 'Reporting',
       status: 'available',
       action: () => setSelectedTool('project-report')
+    },
+    {
+      id: 'bulk-termination',
+      name: 'Bulk Transaction Termination',
+      description: 'Automatically terminate transactions from Metabase query results. Processes all rows and generates a detailed report.',
+      icon: <XCircle className="w-6 h-6" />,
+      category: 'Automation',
+      status: 'available',
+      action: () => setSelectedTool('bulk-termination')
     }
   ]
 
@@ -172,6 +188,37 @@ function ToolsPageContent() {
       setReportError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
       setGeneratingReport(false)
+    }
+  }
+
+  const handleBulkTermination = async () => {
+    setTerminating(true)
+    setTerminationError("")
+    setTerminationResult(null)
+
+    try {
+      const apiUrl = process.env.NODE_ENV === 'development' 
+        ? 'http://localhost:3001/api/tools/terminate-transactions'
+        : '/api/tools/terminate-transactions'
+      
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        credentials: 'include'
+      })
+
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`)
+      }
+
+      const data = await response.json()
+      setTerminationResult(data)
+    } catch (error) {
+      setTerminationError(error instanceof Error ? error.message : 'An error occurred')
+    } finally {
+      setTerminating(false)
     }
   }
 
@@ -596,6 +643,153 @@ Cost impact calculated using $70k annual salary ($35/hour).`
                   })}
                 </div>
               </div>
+            </div>
+          )}
+        </div>
+      </Layout>
+    )
+  }
+
+  if (selectedTool === 'bulk-termination') {
+    return (
+      <Layout title="Bulk Transaction Termination">
+        <div className="max-w-4xl mx-auto">
+          {/* Back to Tools */}
+          <div className="mb-6">
+            <button
+              onClick={() => setSelectedTool(null)}
+              className="flex items-center space-x-2 text-ocean-300 hover:text-ocean-200 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" />
+              <span>Back to Tools Directory</span>
+            </button>
+          </div>
+
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="p-3 bg-gradient-to-br from-red-400 to-red-600 rounded-xl shadow-lg">
+                <XCircle className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-breeze-800">Bulk Transaction Termination</h1>
+                <p className="text-breeze-600 mt-1">
+                  Automatically terminate transactions from Metabase query results
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Warning Banner */}
+          <div className="card mb-6 bg-yellow-500/10 border-yellow-500/30">
+            <div className="flex items-start space-x-3">
+              <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
+              <div>
+                <h4 className="font-semibold text-yellow-900 mb-1">Warning: Bulk Operation</h4>
+                <p className="text-sm text-yellow-800">
+                  This tool will terminate ALL transactions returned from Metabase card 5342. 
+                  The operation cannot be undone. Please verify the query results before proceeding.
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Termination Tool */}
+          <div className="card mb-6">
+            <div className="space-y-4">
+              <div>
+                <h4 className="font-semibold text-breeze-800 mb-2">Execute Bulk Termination</h4>
+                <p className="text-sm text-breeze-600 mb-4">
+                  This will:
+                </p>
+                <ul className="text-sm text-breeze-600 space-y-1 mb-4 ml-4">
+                  <li>• Fetch transaction data from Metabase card 5342</li>
+                  <li>• Extract transaction IDs from URLs in the results</li>
+                  <li>• Mark each transaction as termination-requested</li>
+                  <li>• Confirm termination for each transaction</li>
+                  <li>• Generate a detailed report of successes and failures</li>
+                </ul>
+                <button
+                  onClick={handleBulkTermination}
+                  disabled={terminating}
+                  className="btn-primary bg-red-600 hover:bg-red-700 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {terminating ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Processing...</span>
+                    </>
+                  ) : (
+                    <>
+                      <XCircle className="w-4 h-4" />
+                      <span>Start Bulk Termination</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {terminationError && (
+                <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
+                  <p className="text-red-300 text-sm">{terminationError}</p>
+                </div>
+              )}
+            </div>
+          </div>
+
+          {/* Results */}
+          {terminationResult && (
+            <div className="space-y-6">
+              {/* Summary Stats */}
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div className="card bg-blue-500/10 border-blue-500/30">
+                  <h5 className="font-semibold text-blue-900 mb-2">Total Transactions</h5>
+                  <p className="text-3xl font-bold text-blue-600">{terminationResult.totalRows}</p>
+                </div>
+                <div className="card bg-green-500/10 border-green-500/30">
+                  <h5 className="font-semibold text-green-900 mb-2">Successfully Terminated</h5>
+                  <p className="text-3xl font-bold text-green-600">{terminationResult.successCount}</p>
+                </div>
+                <div className="card bg-red-500/10 border-red-500/30">
+                  <h5 className="font-semibold text-red-900 mb-2">Errors</h5>
+                  <p className="text-3xl font-bold text-red-600">{terminationResult.errorCount}</p>
+                </div>
+              </div>
+
+              {/* Success Message */}
+              <div className="card bg-green-500/10 border-green-500/30">
+                <p className="text-green-800">{terminationResult.message}</p>
+              </div>
+
+              {/* Errors Details */}
+              {terminationResult.errors && terminationResult.errors.length > 0 && (
+                <div className="card">
+                  <h3 className="text-xl font-bold text-breeze-800 mb-4">Error Details</h3>
+                  <div className="space-y-3">
+                    {terminationResult.errors.map((error: any, index: number) => (
+                      <div key={index} className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
+                        <p className="font-semibold text-red-900 mb-1">
+                          Row {error.row} {error.transactionId && `(Transaction: ${error.transactionId})`}
+                        </p>
+                        <p className="text-sm text-red-800">{error.error}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
+              {/* Successful Transactions */}
+              {terminationResult.processedTransactions && terminationResult.processedTransactions.length > 0 && (
+                <div className="card">
+                  <h3 className="text-xl font-bold text-breeze-800 mb-4">Successfully Terminated Transactions</h3>
+                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+                    {terminationResult.processedTransactions.map((transaction: any, index: number) => (
+                      <div key={index} className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
+                        <p className="text-sm font-mono text-green-900">{transaction.transactionId}</p>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
