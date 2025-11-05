@@ -1,4 +1,4 @@
-import React, { useState } from "react"
+import React, { useState, useEffect } from "react"
 import { Layout } from "../components/Layout"
 import { AuthGuard } from "../components/AuthGuard"
 import { ProtectedRoute } from "../components/ProtectedRoute"
@@ -13,8 +13,7 @@ import {
   ChevronRight,
   FileText,
   Download,
-  XCircle,
-  AlertTriangle
+  Plus
 } from "lucide-react"
 import { youTrackService } from "../services/youtrack"
 
@@ -41,11 +40,15 @@ function ToolsPageContent() {
   const [reportData, setReportData] = useState<any>(null)
   const [generatingReport, setGeneratingReport] = useState<boolean>(false)
   const [reportError, setReportError] = useState<string>("")
+  const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set())
 
-  // Bulk Transaction Termination state
-  const [terminationResult, setTerminationResult] = useState<any>(null)
-  const [terminating, setTerminating] = useState<boolean>(false)
-  const [terminationError, setTerminationError] = useState<string>("")
+  // Add Automation state
+  const [automationName, setAutomationName] = useState<string>("")
+  const [automationInitiative, setAutomationInitiative] = useState<string>("")
+  const [automationPlatform, setAutomationPlatform] = useState<string>("")
+  const [creatingAutomation, setCreatingAutomation] = useState<boolean>(false)
+  const [createError, setCreateError] = useState<string>("")
+  const [createdAutomationId, setCreatedAutomationId] = useState<string | null>(null)
 
   // Tools directory
   const tools: Tool[] = [
@@ -68,13 +71,13 @@ function ToolsPageContent() {
       action: () => setSelectedTool('project-report')
     },
     {
-      id: 'bulk-termination',
-      name: 'Bulk Transaction Termination',
-      description: 'Automatically terminate transactions from Metabase query results. Processes all rows and generates a detailed report.',
-      icon: <XCircle className="w-6 h-6" />,
+      id: 'add-automation',
+      name: 'Add Automation',
+      description: 'Create a new automation record in the database with name, platform, and initiative.',
+      icon: <Plus className="w-6 h-6" />,
       category: 'Automation',
       status: 'available',
-      action: () => setSelectedTool('bulk-termination')
+      action: () => setSelectedTool('add-automation')
     }
   ]
 
@@ -145,13 +148,17 @@ function ToolsPageContent() {
       // Transform the raw YouTrack data to our internal format
       const projects = (response.data || []).map((issue: any) => youTrackService.transformIssueToTicket(issue))
 
-      // Separate completed and upcoming projects
+      // Separate completed, upcoming, and queued projects
       const completedProjects = projects.filter((project: any) => {
         return ['Done', 'Completed', 'Closed', 'Resolved', 'Finished'].includes(project.state.name)
       })
 
       const upcomingProjects = projects.filter((project: any) => {
         return project.state.name === 'In Progress'
+      })
+
+      const queuedProjects = projects.filter((project: any) => {
+        return ['To Do', 'Discover', 'Need to Scope'].includes(project.state.name)
       })
 
       // Calculate totals for completed projects
@@ -172,9 +179,13 @@ function ToolsPageContent() {
       const totalTimeSaved = completedTimeSaved + upcomingTimeSaved
       const totalCostImpact = completedCostImpact + upcomingCostImpact
 
+      const allProjectIds = [...completedProjects, ...upcomingProjects].map((p: any) => p.idReadable)
+      setSelectedProjects(new Set(allProjectIds))
+
       setReportData({
         completedProjects,
         upcomingProjects,
+        queuedProjects,
         completedTimeSaved,
         completedCostImpact,
         upcomingTimeSaved,
@@ -191,34 +202,105 @@ function ToolsPageContent() {
     }
   }
 
-  const handleBulkTermination = async () => {
-    setTerminating(true)
-    setTerminationError("")
-    setTerminationResult(null)
+  const toggleProjectSelection = (projectId: string) => {
+    const newSelected = new Set(selectedProjects)
+    if (newSelected.has(projectId)) {
+      newSelected.delete(projectId)
+    } else {
+      newSelected.add(projectId)
+    }
+    setSelectedProjects(newSelected)
+  }
+
+  const getFilteredMetrics = () => {
+    if (!reportData) return null
+
+    const filteredCompleted = reportData.completedProjects.filter((p: any) => 
+      selectedProjects.has(p.idReadable)
+    )
+    const filteredUpcoming = reportData.upcomingProjects.filter((p: any) => 
+      selectedProjects.has(p.idReadable)
+    )
+
+    const completedTimeSaved = filteredCompleted.reduce((total: number, project: any) => {
+      return total + (project.savedTimeMins || 0) / 60
+    }, 0)
+
+    const completedCostImpact = completedTimeSaved * 35
+
+    const upcomingTimeSaved = filteredUpcoming.reduce((total: number, project: any) => {
+      return total + (project.savedTimeMins || 0) / 60
+    }, 0)
+
+    const upcomingCostImpact = upcomingTimeSaved * 35
+
+    return {
+      completedProjects: filteredCompleted,
+      upcomingProjects: filteredUpcoming,
+      completedTimeSaved,
+      completedCostImpact,
+      upcomingTimeSaved,
+      upcomingCostImpact,
+      totalTimeSaved: completedTimeSaved + upcomingTimeSaved,
+      totalCostImpact: completedCostImpact + upcomingCostImpact
+    }
+  }
+
+  // Auto-generate report when tool is opened
+  useEffect(() => {
+    if (selectedTool === 'project-report' && !reportData && !generatingReport) {
+      generateProjectReport()
+    }
+  }, [selectedTool])
+
+  const handleCreateAutomation = async (e: React.FormEvent) => {
+    e.preventDefault()
+    
+    if (!automationName.trim()) {
+      setCreateError("Name is required")
+      return
+    }
+
+    setCreatingAutomation(true)
+    setCreateError("")
+    setCreatedAutomationId(null)
 
     try {
       const apiUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:3001/api/tools/terminate-transactions'
-        : '/api/tools/terminate-transactions'
-      
+        ? 'http://localhost:3001/api/automations'
+        : '/api/automations'
+        
       const response = await fetch(apiUrl, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        credentials: 'include'
+        credentials: 'include',
+        body: JSON.stringify({
+          name: automationName.trim(),
+          initiative: automationInitiative.trim() || null,
+          platform: automationPlatform.trim() || null
+        })
       })
 
       if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`)
+        const errorData = await response.json()
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
       }
 
       const data = await response.json()
-      setTerminationResult(data)
+      console.log('✅ Created automation:', data)
+      
+      setCreatedAutomationId(data.id)
+      // Clear form
+      setAutomationName("")
+      setAutomationInitiative("")
+      setAutomationPlatform("")
+      
     } catch (error) {
-      setTerminationError(error instanceof Error ? error.message : 'An error occurred')
+      setCreateError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
-      setTerminating(false)
+      setCreatingAutomation(false)
     }
   }
 
@@ -252,62 +334,81 @@ function ToolsPageContent() {
   const downloadReport = () => {
     if (!reportData) return
 
-    const reportText = `AUTOMATION PROJECT REPORT
-Generated: ${new Date(reportData.generatedAt).toLocaleDateString()}
+    const filteredMetrics = getFilteredMetrics()
+    if (!filteredMetrics) return
 
-=== COMPLETED PROJECTS ===
+    const reportText = `## Summary
 
-${reportData.completedProjects.map((project: any, index: number) => {
+Completed projects: ${filteredMetrics.completedProjects.length}
+
+Projects in-flight: ${filteredMetrics.upcomingProjects.length}
+
+Projects in queue: ${reportData.queuedProjects ? reportData.queuedProjects.length : 0}
+
+Total Tasks: ~${(filteredMetrics.completedProjects.length + filteredMetrics.upcomingProjects.length) * 1000}
+
+Total Time Savings: ~${Math.round(filteredMetrics.totalTimeSaved).toLocaleString()}
+
+Total Cost Impact: ~$${Math.round(filteredMetrics.totalCostImpact).toLocaleString()}
+
+## Completed Projects
+
+**All tasks and time savings were given by the project requestor. Cost impact is based on $70,000 salary / time savings. For continuous tasks, we are calculating on a full year.
+
+${filteredMetrics.completedProjects.map((project: any) => {
   const formatted = formatProjectForReport(project)
-  return `${index + 1}. ${formatted.name}
-Initiative: ${formatted.initiative}
-Ticket: ${formatted.ticket}
+  return `### ${formatted.name}
 
-Description: ${formatted.description}
+**Initiative**: ${formatted.initiative}
 
-Time Savings: ${formatted.timeSavings.toFixed(0)} hrs
-Cost Impact: $${formatted.costImpact.toLocaleString()}
+**Ticket**: [${formatted.ticket}](https://realbrokerage.youtrack.cloud/issue/${formatted.ticket})
 
+${formatted.description}
+
+Total Tasks: Pending
+
+Time Savings: ${Math.round(formatted.timeSavings)} hrs
+
+Cost Impact: ~$${Math.round(formatted.costImpact).toLocaleString()}
 `
-}).join('')}
+}).join('\n')}
 
-=== IN PROGRESS PROJECTS ===
+## To Be Completed Next
 
-${reportData.upcomingProjects.map((project: any, index: number) => {
+**All tasks and time savings were given by the project requestor. Cost impact is based on $70,000 salary / time savings. For continuous tasks, we are calculating on a full year.
+
+${filteredMetrics.upcomingProjects.map((project: any) => {
   const formatted = formatProjectForReport(project)
-  return `${index + 1}. ${formatted.name}
-Initiative: ${formatted.initiative}
-Ticket: ${formatted.ticket}
+  return `### ${formatted.name}
 
-Description: ${formatted.description}
+**Initiative**: ${formatted.initiative}
 
-${formatted.timeSavings > 0 ? `Time Savings: ${formatted.timeSavings.toFixed(0)} hrs
-Cost Impact: $${formatted.costImpact.toLocaleString()}` : 'Time Savings: Not yet calculated'}
+**Ticket**: [${formatted.ticket}](https://realbrokerage.youtrack.cloud/issue/${formatted.ticket})
 
+${formatted.description}
+
+Total Tasks: ${formatted.timeSavings > 0 ? 'Pending' : 'NA'}
+
+Time Savings: ${formatted.timeSavings > 0 ? `${Math.round(formatted.timeSavings)} hrs` : 'Pending'}
+
+Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact).toLocaleString()}` : 'Pending'}
 `
-}).join('')}
+}).join('\n')}
 
-=== SUMMARY ===
-Completed Projects: ${reportData.completedProjects.length}
-In Progress Projects: ${reportData.upcomingProjects.length}
+## Platforms We Can Automate
 
-Time Savings Breakdown:
-- Completed Projects: ${reportData.completedTimeSaved.toFixed(0)} hrs
-- In Progress Projects: ${reportData.upcomingTimeSaved.toFixed(0)} hrs
-- Total Time Saved: ${reportData.totalTimeSaved.toFixed(0)} hrs
+* ReZen
+* Real Signature
+* ZenDesk
+* Workvivo
+* Google Sheets
+`
 
-Cost Impact Breakdown:
-- Completed Projects: $${reportData.completedCostImpact.toLocaleString()}
-- In Progress Projects: $${reportData.upcomingCostImpact.toLocaleString()}
-- Total Cost Impact: $${reportData.totalCostImpact.toLocaleString()}
-
-Cost impact calculated using $70k annual salary ($35/hour).`
-
-    const blob = new Blob([reportText], { type: 'text/plain' })
+    const blob = new Blob([reportText], { type: 'text/markdown' })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url
-    a.download = `automation-project-report-${new Date().toISOString().split('T')[0]}.txt`
+    a.download = `automation-project-report-${new Date().toISOString().split('T')[0]}.md`
     document.body.appendChild(a)
     a.click()
     document.body.removeChild(a)
@@ -458,7 +559,11 @@ Cost impact calculated using $70k annual salary ($35/hour).`
           {/* Back to Tools */}
           <div className="mb-6">
             <button
-              onClick={() => setSelectedTool(null)}
+              onClick={() => {
+                setSelectedTool(null)
+                setReportData(null)
+                setReportError("")
+              }}
               className="flex items-center space-x-2 text-ocean-300 hover:text-ocean-200 transition-colors"
             >
               <ChevronRight className="w-4 h-4 rotate-180" />
@@ -481,183 +586,218 @@ Cost impact calculated using $70k annual salary ($35/hour).`
             </div>
           </div>
 
-          {/* Report Generator Tool */}
-          <div className="card mb-6">
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h4 className="font-semibold text-breeze-800 mb-2">Generate Project Report</h4>
-                  <p className="text-sm text-breeze-600">
-                    This report will show completed projects with time savings and cost impact, plus upcoming projects in progress.
-                  </p>
-                </div>
-                <button
-                  onClick={generateProjectReport}
-                  disabled={generatingReport}
-                  className="btn-primary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
-                >
-                  {generatingReport ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Generating...</span>
-                    </>
-                  ) : (
-                    <>
-                      <FileText className="w-4 h-4" />
-                      <span>Generate Report</span>
-                    </>
-                  )}
-                </button>
-              </div>
-
-              {reportError && (
-                <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
-                  <p className="text-red-300 text-sm">{reportError}</p>
-                </div>
-              )}
-            </div>
-          </div>
-
-          {/* Report Results */}
-          {reportData && (
-            <div className="space-y-6">
-              {/* Summary Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h5 className="font-semibold text-gray-800 mb-2">Completed Projects</h5>
-                  <p className="text-2xl font-bold text-green-600">{reportData.completedProjects.length}</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {reportData.completedTimeSaved.toFixed(0)} hrs saved
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    ${reportData.completedCostImpact.toLocaleString()} impact
-                  </p>
-                </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h5 className="font-semibold text-gray-800 mb-2">In Progress Projects</h5>
-                  <p className="text-2xl font-bold text-blue-600">{reportData.upcomingProjects.length}</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    {reportData.upcomingTimeSaved.toFixed(0)} hrs saved
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    ${reportData.upcomingCostImpact.toLocaleString()} impact
-                  </p>
-                </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h5 className="font-semibold text-gray-800 mb-2">Total Time Saved</h5>
-                  <p className="text-2xl font-bold text-purple-600">{reportData.totalTimeSaved.toFixed(0)} hrs</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Completed: {reportData.completedTimeSaved.toFixed(0)} hrs
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    In Progress: {reportData.upcomingTimeSaved.toFixed(0)} hrs
-                  </p>
-                </div>
-                <div className="bg-white border border-gray-200 rounded-lg p-4">
-                  <h5 className="font-semibold text-gray-800 mb-2">Total Cost Impact</h5>
-                  <p className="text-2xl font-bold text-orange-600">${reportData.totalCostImpact.toLocaleString()}</p>
-                  <p className="text-sm text-gray-600 mt-1">
-                    Completed: ${reportData.completedCostImpact.toLocaleString()}
-                  </p>
-                  <p className="text-sm text-gray-600">
-                    In Progress: ${reportData.upcomingCostImpact.toLocaleString()}
-                  </p>
-                </div>
-              </div>
-
-              {/* Download Button */}
-              <div className="flex justify-center">
-                <button
-                  onClick={downloadReport}
-                  className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors"
-                >
-                  <Download className="w-4 h-4" />
-                  <span>Download Report</span>
-                </button>
-              </div>
-
-              {/* Completed Projects */}
-              <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">Completed Projects</h3>
-                <div className="space-y-6">
-                  {reportData.completedProjects.map((project: any, index: number) => {
-                    const formatted = formatProjectForReport(project)
-                    return (
-                      <div key={project.idReadable} className="border-b border-gray-100 pb-4 last:border-b-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-semibold text-gray-800">{formatted.name}</h4>
-                          <div className="flex items-center space-x-2 text-sm text-gray-500">
-                            <span>Initiative: {formatted.initiative}</span>
-                            <span>•</span>
-                            <span>Ticket: {formatted.ticket}</span>
-                          </div>
-                        </div>
-                        <p className="text-gray-600 mb-3">{formatted.description}</p>
-                        <div className="flex items-center space-x-6 text-sm">
-                          <div className="flex items-center space-x-1">
-                            <span className="text-gray-500">Time Savings:</span>
-                            <span className="font-semibold text-green-600">{formatted.timeSavings.toFixed(0)} hrs</span>
-                          </div>
-                          <div className="flex items-center space-x-1">
-                            <span className="text-gray-500">Cost Impact:</span>
-                            <span className="font-semibold text-orange-600">${formatted.costImpact.toLocaleString()}</span>
-                          </div>
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-
-              {/* Upcoming Projects */}
-              <div className="bg-white border border-gray-200 rounded-lg p-6">
-                <h3 className="text-xl font-bold text-gray-800 mb-4">In Progress Projects</h3>
-                <div className="space-y-4">
-                  {reportData.upcomingProjects.map((project: any, index: number) => {
-                    const formatted = formatProjectForReport(project)
-                    return (
-                      <div key={project.idReadable} className="border-b border-gray-100 pb-4 last:border-b-0">
-                        <div className="flex items-start justify-between mb-2">
-                          <h4 className="font-semibold text-gray-800">{formatted.name}</h4>
-                          <div className="flex items-center space-x-2 text-sm text-gray-500">
-                            <span>Initiative: {formatted.initiative}</span>
-                            <span>•</span>
-                            <span>Ticket: {formatted.ticket}</span>
-                          </div>
-                        </div>
-                        <p className="text-gray-600 mb-3">{formatted.description}</p>
-                        {formatted.timeSavings > 0 && (
-                          <div className="flex items-center space-x-6 text-sm">
-                            <div className="flex items-center space-x-1">
-                              <span className="text-gray-500">Time Savings:</span>
-                              <span className="font-semibold text-green-600">{formatted.timeSavings.toFixed(0)} hrs</span>
-                            </div>
-                            <div className="flex items-center space-x-1">
-                              <span className="text-gray-500">Cost Impact:</span>
-                              <span className="font-semibold text-orange-600">${formatted.costImpact.toLocaleString()}</span>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )
-                  })}
-                </div>
+          {/* Loading State */}
+          {generatingReport && (
+            <div className="card mb-6">
+              <div className="flex items-center justify-center space-x-3 py-8">
+                <Loader2 className="w-6 h-6 animate-spin text-breeze-600" />
+                <span className="text-breeze-700 font-medium">Generating report...</span>
               </div>
             </div>
           )}
+
+          {/* Error State */}
+          {reportError && !generatingReport && (
+            <div className="card mb-6">
+              <div className="space-y-4">
+                <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
+                  <p className="text-red-300 text-sm">{reportError}</p>
+                </div>
+                <button
+                  onClick={generateProjectReport}
+                  className="btn-primary flex items-center space-x-2"
+                >
+                  <FileText className="w-4 h-4" />
+                  <span>Retry</span>
+                </button>
+              </div>
+            </div>
+          )}
+
+          {/* Report Results */}
+          {reportData && (() => {
+            const filteredMetrics = getFilteredMetrics()
+            if (!filteredMetrics) return null
+
+            return (
+              <div className="space-y-6">
+                {/* Download Button */}
+                <div className="flex justify-center">
+                  <button
+                    onClick={downloadReport}
+                    className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors"
+                  >
+                    <Download className="w-4 h-4" />
+                    <span>Download Report ({selectedProjects.size} selected)</span>
+                  </button>
+                </div>
+
+                {/* Summary Stats */}
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <h5 className="font-semibold text-gray-800 mb-2">Completed Projects</h5>
+                    <p className="text-2xl font-bold text-green-600">{filteredMetrics.completedProjects.length}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {filteredMetrics.completedTimeSaved.toFixed(0)} hrs saved
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      ${filteredMetrics.completedCostImpact.toLocaleString()} impact
+                    </p>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <h5 className="font-semibold text-gray-800 mb-2">In Progress Projects</h5>
+                    <p className="text-2xl font-bold text-blue-600">{filteredMetrics.upcomingProjects.length}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      {filteredMetrics.upcomingTimeSaved.toFixed(0)} hrs saved
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      ${filteredMetrics.upcomingCostImpact.toLocaleString()} impact
+                    </p>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <h5 className="font-semibold text-gray-800 mb-2">Total Time Saved</h5>
+                    <p className="text-2xl font-bold text-purple-600">{filteredMetrics.totalTimeSaved.toFixed(0)} hrs</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Completed: {filteredMetrics.completedTimeSaved.toFixed(0)} hrs
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      In Progress: {filteredMetrics.upcomingTimeSaved.toFixed(0)} hrs
+                    </p>
+                  </div>
+                  <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <h5 className="font-semibold text-gray-800 mb-2">Total Cost Impact</h5>
+                    <p className="text-2xl font-bold text-orange-600">${filteredMetrics.totalCostImpact.toLocaleString()}</p>
+                    <p className="text-sm text-gray-600 mt-1">
+                      Completed: ${filteredMetrics.completedCostImpact.toLocaleString()}
+                    </p>
+                    <p className="text-sm text-gray-600">
+                      In Progress: ${filteredMetrics.upcomingCostImpact.toLocaleString()}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Completed Projects */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">Completed Projects</h3>
+                  <div className="space-y-6">
+                    {reportData.completedProjects.map((project: any, index: number) => {
+                      const formatted = formatProjectForReport(project)
+                      const isSelected = selectedProjects.has(project.idReadable)
+                      return (
+                        <div key={project.idReadable} className="border-b border-gray-100 pb-4 last:border-b-0">
+                          <div className="flex items-start space-x-3 mb-2">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleProjectSelection(project.idReadable)}
+                              className="mt-1 h-4 w-4 text-breeze-600 focus:ring-breeze-500 border-gray-300 rounded cursor-pointer"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between">
+                                <h4 className="font-semibold text-gray-800">{formatted.name}</h4>
+                                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                  <span>Initiative: {formatted.initiative}</span>
+                                  <span>•</span>
+                                  <span>Ticket: <a 
+                                    href={`https://realbrokerage.youtrack.cloud/issue/${formatted.ticket}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-breeze-600 hover:text-breeze-700 underline"
+                                  >{formatted.ticket}</a></span>
+                                </div>
+                              </div>
+                              <p className="text-gray-600 mb-3">{formatted.description}</p>
+                              <div className="flex items-center space-x-6 text-sm">
+                                <div className="flex items-center space-x-1">
+                                  <span className="text-gray-500">Time Savings:</span>
+                                  <span className="font-semibold text-green-600">{formatted.timeSavings.toFixed(0)} hrs</span>
+                                </div>
+                                <div className="flex items-center space-x-1">
+                                  <span className="text-gray-500">Cost Impact:</span>
+                                  <span className="font-semibold text-orange-600">${formatted.costImpact.toLocaleString()}</span>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+
+                {/* Upcoming Projects */}
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h3 className="text-xl font-bold text-gray-800 mb-4">In Progress Projects</h3>
+                  <div className="space-y-4">
+                    {reportData.upcomingProjects.map((project: any, index: number) => {
+                      const formatted = formatProjectForReport(project)
+                      const isSelected = selectedProjects.has(project.idReadable)
+                      return (
+                        <div key={project.idReadable} className="border-b border-gray-100 pb-4 last:border-b-0">
+                          <div className="flex items-start space-x-3 mb-2">
+                            <input
+                              type="checkbox"
+                              checked={isSelected}
+                              onChange={() => toggleProjectSelection(project.idReadable)}
+                              className="mt-1 h-4 w-4 text-breeze-600 focus:ring-breeze-500 border-gray-300 rounded cursor-pointer"
+                            />
+                            <div className="flex-1">
+                              <div className="flex items-start justify-between">
+                                <h4 className="font-semibold text-gray-800">{formatted.name}</h4>
+                                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                  <span>Initiative: {formatted.initiative}</span>
+                                  <span>•</span>
+                                  <span>Ticket: <a 
+                                    href={`https://realbrokerage.youtrack.cloud/issue/${formatted.ticket}`}
+                                    target="_blank"
+                                    rel="noopener noreferrer"
+                                    className="text-breeze-600 hover:text-breeze-700 underline"
+                                  >{formatted.ticket}</a></span>
+                                </div>
+                              </div>
+                              <p className="text-gray-600 mb-3">{formatted.description}</p>
+                              {formatted.timeSavings > 0 && (
+                                <div className="flex items-center space-x-6 text-sm">
+                                  <div className="flex items-center space-x-1">
+                                    <span className="text-gray-500">Time Savings:</span>
+                                    <span className="font-semibold text-green-600">{formatted.timeSavings.toFixed(0)} hrs</span>
+                                  </div>
+                                  <div className="flex items-center space-x-1">
+                                    <span className="text-gray-500">Cost Impact:</span>
+                                    <span className="font-semibold text-orange-600">${formatted.costImpact.toLocaleString()}</span>
+                                  </div>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+              </div>
+            )
+          })()}
         </div>
       </Layout>
     )
   }
 
-  if (selectedTool === 'bulk-termination') {
+  if (selectedTool === 'add-automation') {
     return (
-      <Layout title="Bulk Transaction Termination">
-        <div className="max-w-4xl mx-auto">
+      <Layout title="Add Automation">
+        <div className="max-w-2xl mx-auto">
           {/* Back to Tools */}
           <div className="mb-6">
             <button
-              onClick={() => setSelectedTool(null)}
+              onClick={() => {
+                setSelectedTool(null)
+                setAutomationName("")
+                setAutomationInitiative("")
+                setAutomationPlatform("")
+                setCreateError("")
+                setCreatedAutomationId(null)
+              }}
               className="flex items-center space-x-2 text-ocean-300 hover:text-ocean-200 transition-colors"
             >
               <ChevronRight className="w-4 h-4 rotate-180" />
@@ -668,130 +808,104 @@ Cost impact calculated using $70k annual salary ($35/hour).`
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="p-3 bg-gradient-to-br from-red-400 to-red-600 rounded-xl shadow-lg">
-                <XCircle className="w-6 h-6 text-white" />
+              <div className="p-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl shadow-lg">
+                <Plus className="w-6 h-6 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-breeze-800">Bulk Transaction Termination</h1>
+                <h1 className="text-3xl font-bold text-breeze-800">Add Automation</h1>
                 <p className="text-breeze-600 mt-1">
-                  Automatically terminate transactions from Metabase query results
+                  Create a new automation record in the database
                 </p>
               </div>
             </div>
           </div>
 
-          {/* Warning Banner */}
-          <div className="card mb-6 bg-yellow-500/10 border-yellow-500/30">
-            <div className="flex items-start space-x-3">
-              <AlertTriangle className="w-5 h-5 text-yellow-600 flex-shrink-0 mt-0.5" />
-              <div>
-                <h4 className="font-semibold text-yellow-900 mb-1">Warning: Bulk Operation</h4>
-                <p className="text-sm text-yellow-800">
-                  This tool will terminate ALL transactions returned from Metabase card 5342. 
-                  The operation cannot be undone. Please verify the query results before proceeding.
-                </p>
-              </div>
-            </div>
-          </div>
+          {/* Form */}
+          <div className="card">
+            <form onSubmit={handleCreateAutomation} className="space-y-6">
+              {/* Success Message */}
+              {createdAutomationId && (
+                <div className="p-6 bg-green-500/30 border-2 border-green-400 rounded-lg">
+                  <p className="text-black text-base font-semibold mb-2">Automation created successfully!</p>
+                  <p className="text-black text-sm font-mono bg-green-900/30 p-2 rounded">ID: {createdAutomationId}</p>
+                </div>
+              )}
 
-          {/* Termination Tool */}
-          <div className="card mb-6">
-            <div className="space-y-4">
+              {/* Error Message */}
+              {createError && (
+                <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
+                  <p className="text-red-300 text-sm">{createError}</p>
+                </div>
+              )}
+
+              {/* Name Field */}
               <div>
-                <h4 className="font-semibold text-breeze-800 mb-2">Execute Bulk Termination</h4>
-                <p className="text-sm text-breeze-600 mb-4">
-                  This will:
-                </p>
-                <ul className="text-sm text-breeze-600 space-y-1 mb-4 ml-4">
-                  <li>• Fetch transaction data from Metabase card 5342</li>
-                  <li>• Extract transaction IDs from URLs in the results</li>
-                  <li>• Mark each transaction as termination-requested</li>
-                  <li>• Confirm termination for each transaction</li>
-                  <li>• Generate a detailed report of successes and failures</li>
-                </ul>
+                <label htmlFor="automation-name" className="block text-sm font-medium text-breeze-700 mb-2">
+                  Name <span className="text-red-500">*</span>
+                </label>
+                <input
+                  id="automation-name"
+                  type="text"
+                  value={automationName}
+                  onChange={(e) => setAutomationName(e.target.value)}
+                  placeholder="Enter automation name"
+                  className="w-full px-3 py-2 bg-white border border-white/20 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50"
+                  required
+                />
+              </div>
+
+              {/* Platform Field */}
+              <div>
+                <label htmlFor="automation-platform" className="block text-sm font-medium text-breeze-700 mb-2">
+                  Platform
+                </label>
+                <input
+                  id="automation-platform"
+                  type="text"
+                  value={automationPlatform}
+                  onChange={(e) => setAutomationPlatform(e.target.value)}
+                  placeholder="Enter platform (optional)"
+                  className="w-full px-3 py-2 bg-white border border-white/20 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50"
+                />
+              </div>
+
+              {/* Initiative Field */}
+              <div>
+                <label htmlFor="automation-initiative" className="block text-sm font-medium text-breeze-700 mb-2">
+                  Initiative
+                </label>
+                <input
+                  id="automation-initiative"
+                  type="text"
+                  value={automationInitiative}
+                  onChange={(e) => setAutomationInitiative(e.target.value)}
+                  placeholder="Enter initiative (optional)"
+                  className="w-full px-3 py-2 bg-white border border-white/20 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50"
+                />
+              </div>
+
+              {/* Submit Button */}
+              <div className="flex justify-end">
                 <button
-                  onClick={handleBulkTermination}
-                  disabled={terminating}
-                  className="btn-primary bg-red-600 hover:bg-red-700 flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  type="submit"
+                  disabled={creatingAutomation}
+                  className="btn-primary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                  {terminating ? (
+                  {creatingAutomation ? (
                     <>
                       <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Processing...</span>
+                      <span>Creating...</span>
                     </>
                   ) : (
                     <>
-                      <XCircle className="w-4 h-4" />
-                      <span>Start Bulk Termination</span>
+                      <Plus className="w-4 h-4" />
+                      <span>Create Automation</span>
                     </>
                   )}
                 </button>
               </div>
-
-              {terminationError && (
-                <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
-                  <p className="text-red-300 text-sm">{terminationError}</p>
-                </div>
-              )}
-            </div>
+            </form>
           </div>
-
-          {/* Results */}
-          {terminationResult && (
-            <div className="space-y-6">
-              {/* Summary Stats */}
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div className="card bg-blue-500/10 border-blue-500/30">
-                  <h5 className="font-semibold text-blue-900 mb-2">Total Transactions</h5>
-                  <p className="text-3xl font-bold text-blue-600">{terminationResult.totalRows}</p>
-                </div>
-                <div className="card bg-green-500/10 border-green-500/30">
-                  <h5 className="font-semibold text-green-900 mb-2">Successfully Terminated</h5>
-                  <p className="text-3xl font-bold text-green-600">{terminationResult.successCount}</p>
-                </div>
-                <div className="card bg-red-500/10 border-red-500/30">
-                  <h5 className="font-semibold text-red-900 mb-2">Errors</h5>
-                  <p className="text-3xl font-bold text-red-600">{terminationResult.errorCount}</p>
-                </div>
-              </div>
-
-              {/* Success Message */}
-              <div className="card bg-green-500/10 border-green-500/30">
-                <p className="text-green-800">{terminationResult.message}</p>
-              </div>
-
-              {/* Errors Details */}
-              {terminationResult.errors && terminationResult.errors.length > 0 && (
-                <div className="card">
-                  <h3 className="text-xl font-bold text-breeze-800 mb-4">Error Details</h3>
-                  <div className="space-y-3">
-                    {terminationResult.errors.map((error: any, index: number) => (
-                      <div key={index} className="p-3 bg-red-500/10 border border-red-500/30 rounded-lg">
-                        <p className="font-semibold text-red-900 mb-1">
-                          Row {error.row} {error.transactionId && `(Transaction: ${error.transactionId})`}
-                        </p>
-                        <p className="text-sm text-red-800">{error.error}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              {/* Successful Transactions */}
-              {terminationResult.processedTransactions && terminationResult.processedTransactions.length > 0 && (
-                <div className="card">
-                  <h3 className="text-xl font-bold text-breeze-800 mb-4">Successfully Terminated Transactions</h3>
-                  <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                    {terminationResult.processedTransactions.map((transaction: any, index: number) => (
-                      <div key={index} className="p-3 bg-green-500/10 border border-green-500/30 rounded-lg">
-                        <p className="text-sm font-mono text-green-900">{transaction.transactionId}</p>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              )}
-            </div>
-          )}
         </div>
       </Layout>
     )

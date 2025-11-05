@@ -5,6 +5,7 @@ const path = require('path');
 const cookieParser = require('cookie-parser');
 const authMiddleware = require('./middleware/auth');
 const authRoutes = require('./routes/auth');
+const automationsRoutes = require('./routes/automations');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,6 +29,34 @@ app.use('/api', (req, res, next) => {
   }
   authMiddleware(req, res, next);
 });
+
+// Admin-only middleware for sensitive endpoints
+const adminOnlyMiddleware = (req, res, next) => {
+  const ADMIN_EMAILS = [
+    'mark.hinojosa@therealbrokerage.com',
+    'taylor.potter@therealbrokerage.com',
+    'jenna.rozenblat@therealbrokerage.com',
+    'guru.jorepalli@therealbrokerage.com',
+    'akash.bawa@therealbrokerage.com',
+    'nanda.anumolu@therealbrokerage.com',
+    'rahul.dasari@therealbrokerage.com',
+    'sreekanth.pogula@therealbrokerage.com',
+    'soham.nehra@therealbrokerage.com',
+  ];
+  
+  const userEmail = req.user?.email?.toLowerCase();
+  
+  if (!userEmail || !ADMIN_EMAILS.includes(userEmail)) {
+    return res.status(403).json({ 
+      error: 'Access denied. Admin privileges required.' 
+    });
+  }
+  
+  next();
+};
+
+// Automations routes (admin only)
+app.use('/api/automations', adminOnlyMiddleware, automationsRoutes);
 
 // YouTrack configuration
 const YOUTRACK_BASE_URL = process.env.YOUTRACK_BASE_URL;
@@ -265,165 +294,6 @@ app.post('/api/metabase/inspect', async (req, res) => {
   } catch (error) {
     console.error('Metabase inspection error:', error);
     res.status(500).json({ error: error.message });
-  }
-});
-
-// Bulk transaction termination tool
-app.post('/api/tools/terminate-transactions', async (req, res) => {
-  try {
-    console.log('🔄 Starting bulk transaction termination...');
-    
-    const METABASE_API_KEY = process.env.METABASE_API_KEY;
-    const ARRAKIS_API_KEY = process.env.ARRAKIS_API_KEY;
-    const METABASE_CARD_ID = 5342;
-    
-    if (!METABASE_API_KEY) {
-      return res.status(500).json({ error: 'METABASE_API_KEY not configured' });
-    }
-    
-    if (!ARRAKIS_API_KEY) {
-      return res.status(500).json({ error: 'ARRAKIS_API_KEY not configured' });
-    }
-    
-    const fetch = (await import('node-fetch')).default;
-    
-    // Step 1: Fetch data from Metabase
-    console.log(`📊 Fetching data from Metabase card ${METABASE_CARD_ID}...`);
-    const metabaseResponse = await fetch(
-      `https://metabase.therealbrokerage.com/api/card/${METABASE_CARD_ID}/query?ignore_view=true`,
-      {
-        method: 'POST',
-        headers: {
-          'X-API-Key': METABASE_API_KEY,
-          'Content-Type': 'application/json'
-        }
-      }
-    );
-    
-    if (!metabaseResponse.ok) {
-      throw new Error(`Metabase query failed: ${metabaseResponse.status} ${metabaseResponse.statusText}`);
-    }
-    
-    const metabaseData = await metabaseResponse.json();
-    const rows = metabaseData.data?.rows || [];
-    
-    console.log(`📋 Found ${rows.length} rows to process`);
-    
-    if (rows.length === 0) {
-      return res.json({
-        success: true,
-        totalRows: 0,
-        successCount: 0,
-        errorCount: 0,
-        errors: [],
-        message: 'No transactions to process'
-      });
-    }
-    
-    // Step 2: Process each row
-    const results = {
-      totalRows: rows.length,
-      successCount: 0,
-      errorCount: 0,
-      errors: [],
-      processedTransactions: []
-    };
-    
-    for (let i = 0; i < rows.length; i++) {
-      const row = rows[i];
-      
-      try {
-        // Extract transaction ID from URL (assuming it's in one of the columns)
-        // You may need to adjust the column index based on your data structure
-        let transactionId = null;
-        
-        // Try to find transaction ID in the row data
-        for (const cell of row) {
-          if (typeof cell === 'string' && cell.includes('transactions/')) {
-            const match = cell.match(/transactions\/([^\/\?]+)/);
-            if (match) {
-              transactionId = match[1];
-              break;
-            }
-          }
-        }
-        
-        if (!transactionId) {
-          results.errorCount++;
-          results.errors.push({
-            row: i + 1,
-            error: 'Could not extract transaction ID from row data',
-            data: row
-          });
-          continue;
-        }
-        
-        console.log(`🔄 Processing transaction ${i + 1}/${rows.length}: ${transactionId}`);
-        
-        // Step 2a: Mark termination requested
-        const terminationRequestedResponse = await fetch(
-          `https://arrakis.therealbrokerage.com/api/v1/transactions/${transactionId}/termination-requested`,
-          {
-            method: 'PUT',
-            headers: {
-              'X-API-Key': ARRAKIS_API_KEY
-            }
-          }
-        );
-        
-        if (!terminationRequestedResponse.ok) {
-          throw new Error(`Termination request failed: ${terminationRequestedResponse.status}`);
-        }
-        
-        // Step 2b: Mark as terminated
-        const terminatedResponse = await fetch(
-          `https://arrakis.therealbrokerage.com/api/v1/transactions/${transactionId}/terminated`,
-          {
-            method: 'GET',
-            headers: {
-              'X-API-Key': ARRAKIS_API_KEY
-            }
-          }
-        );
-        
-        if (!terminatedResponse.ok) {
-          throw new Error(`Termination confirmation failed: ${terminatedResponse.status}`);
-        }
-        
-        results.successCount++;
-        results.processedTransactions.push({
-          transactionId,
-          status: 'success'
-        });
-        
-        console.log(`✅ Successfully terminated transaction: ${transactionId}`);
-        
-      } catch (error) {
-        results.errorCount++;
-        results.errors.push({
-          row: i + 1,
-          transactionId: transactionId || 'unknown',
-          error: error.message
-        });
-        console.error(`❌ Error processing transaction ${transactionId}:`, error.message);
-      }
-    }
-    
-    console.log(`✅ Bulk termination complete: ${results.successCount} succeeded, ${results.errorCount} failed`);
-    
-    res.json({
-      success: true,
-      ...results,
-      message: `Processed ${results.totalRows} transactions: ${results.successCount} succeeded, ${results.errorCount} failed`
-    });
-    
-  } catch (error) {
-    console.error('💥 Bulk termination error:', error);
-    res.status(500).json({ 
-      success: false,
-      error: error.message,
-      timestamp: new Date().toISOString()
-    });
   }
 });
 

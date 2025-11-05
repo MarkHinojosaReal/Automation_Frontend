@@ -28,6 +28,7 @@ export const PAGE_ACCESS: PageAccess[] = [
   { path: '/tasks', label: 'Tasks', allowedRoles: ['admin', 'user'] },
   { path: '/projects', label: 'Projects', allowedRoles: ['admin', 'user'] },
   { path: '/metrics', label: 'Metrics', allowedRoles: ['admin'] },
+  { path: '/automations', label: 'Control Panel', allowedRoles: ['admin'] }, // Admin only - sensitive!
   { path: '/tools', label: 'Tools', allowedRoles: ['admin'] },
   { path: '/request', label: 'New Request', allowedRoles: ['admin', 'user'] }, // Always last
 ]
