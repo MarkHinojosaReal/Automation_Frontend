@@ -78,7 +78,7 @@ export default function LoginPage() {
         if (userRole === 'admin') {
           window.location.href = '/'
         } else {
-          window.location.href = '/tasks'
+          window.location.href = '/projects'
         }
       } else {
         showError(data.error || 'Authentication failed')

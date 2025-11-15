@@ -2,7 +2,6 @@ import React, { useMemo } from "react"
 import { Link } from "gatsby"
 import { 
   Home, 
-  Ticket, 
   Folder,
   Bot,
   BarChart3,
@@ -61,7 +60,6 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   const iconMap: Record<string, React.ReactNode> = {
     '/': <Home className="w-5 h-5" />,
     '/projects': <Folder className="w-5 h-5" />,
-    '/tasks': <Ticket className="w-5 h-5" />,
     '/request': <Bot className="w-5 h-5" />,
     '/metrics': <BarChart3 className="w-5 h-5" />,
     '/tools': <Wrench className="w-5 h-5" />,

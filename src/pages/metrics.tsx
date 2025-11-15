@@ -378,7 +378,7 @@ function MetricsPageContent() {
                   <tr key={execution.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
                     <td className="py-3 px-4">
                       <code className="text-xs bg-slate-200 px-2 py-1 rounded font-mono text-breeze-800">
-                        {execution.automation_id.slice(0, 8)}...
+                        {execution.automation_id ? `${execution.automation_id.slice(0, 8)}...` : 'N/A'}
                       </code>
                     </td>
                     <td className="py-3 px-4 text-sm text-breeze-600">

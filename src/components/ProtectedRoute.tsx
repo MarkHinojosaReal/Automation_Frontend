@@ -24,9 +24,9 @@ export function ProtectedRoute({ children, requiredPath }: ProtectedRouteProps) 
 
   // Check if user has access to the required path
   if (requiredPath && user && !hasAccess(requiredPath)) {
-    // Redirect to tasks page if user doesn't have access
+    // Redirect to projects page if user doesn't have access
     if (typeof window !== 'undefined') {
-      navigate('/tasks')
+      navigate('/projects')
     }
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
@@ -37,10 +37,10 @@ export function ProtectedRoute({ children, requiredPath }: ProtectedRouteProps) 
             You don't have permission to access this page.
           </p>
           <button
-            onClick={() => navigate('/tasks')}
+            onClick={() => navigate('/projects')}
             className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg transition-colors"
           >
-            Go to Tasks
+            Go to Projects
           </button>
         </div>
       </div>
