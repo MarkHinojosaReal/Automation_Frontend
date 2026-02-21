@@ -220,6 +220,37 @@ class YouTrackService {
     }
   }
 
+  async updateIssue(issueId: string, updateData: {
+    summary?: string
+    description?: string
+  }): Promise<YouTrackApiResponse> {
+    try {
+      const payload: any = {}
+      
+      if (updateData.summary !== undefined) {
+        payload.summary = updateData.summary
+      }
+      
+      if (updateData.description !== undefined) {
+        payload.description = updateData.description
+      }
+
+      console.log('Updating issue with payload:', payload)
+
+      let result
+      if (this.config.useProxy) {
+        result = await this.makeRequest(`/issues/${issueId}`, {}, 'PATCH', payload)
+      } else {
+        result = await this.makeRequest(`/issues/${issueId}`, {}, 'POST', payload)
+      }
+
+      return result
+    } catch (error) {
+      console.error('Error updating issue:', error)
+      return { error: error instanceof Error ? error.message : 'Failed to update issue' }
+    }
+  }
+
   async createIssue(issueData: {
     summary: string
     description: string

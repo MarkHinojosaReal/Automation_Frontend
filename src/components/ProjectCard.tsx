@@ -1,8 +1,9 @@
 import React, { useState } from "react"
 import { Link } from "gatsby"
 import ReactMarkdown from "react-markdown"
-import { Calendar, User, Tag, ChevronDown, ChevronUp, Users, Clock, DollarSign } from "lucide-react"
+import { Calendar, User, Tag, ChevronDown, ChevronUp, Users, Clock, DollarSign, Edit3, Save, X, Loader2 } from "lucide-react"
 import type { Ticket } from "../types"
+import { youTrackService } from "../services/youtrack"
 
 interface ProjectCardProps {
   project: Ticket
@@ -11,6 +12,10 @@ interface ProjectCardProps {
 
 export function ProjectCard({ project, compact = false }: ProjectCardProps) {
   const [isExpanded, setIsExpanded] = useState(false)
+  const [isEditingDescription, setIsEditingDescription] = useState(false)
+  const [editedDescription, setEditedDescription] = useState(project.description || "")
+  const [isSaving, setIsSaving] = useState(false)
+  const [saveError, setSaveError] = useState("")
   const formatDate = (timestamp: number) => {
     return new Date(timestamp).toLocaleDateString("en-US", {
       month: "short",
@@ -32,6 +37,44 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
   const getYouTrackUrl = (idReadable: string) => {
     const youtrackBase = process.env.GATSBY_YOUTRACK_BASE_URL || 'https://realbrokerage.youtrack.cloud'
     return `${youtrackBase}/issue/${idReadable}`
+  }
+
+  const handleStartEdit = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsEditingDescription(true)
+    setSaveError("")
+  }
+
+  const handleCancelEdit = (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsEditingDescription(false)
+    setEditedDescription(project.description || "")
+    setSaveError("")
+  }
+
+  const handleSaveDescription = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    setIsSaving(true)
+    setSaveError("")
+    
+    try {
+      const response = await youTrackService.updateIssue(project.idReadable, {
+        description: editedDescription
+      })
+      
+      if (response.error) {
+        throw new Error(response.error)
+      }
+      
+      // Update local state optimistically
+      project.description = editedDescription
+      setIsEditingDescription(false)
+      
+    } catch (error) {
+      setSaveError(error instanceof Error ? error.message : 'Failed to save changes')
+    } finally {
+      setIsSaving(false)
+    }
   }
 
   const getPriorityColor = (priorityName: string) => {
@@ -146,25 +189,77 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
         {/* Expandable Description for Compact View */}
         {project.description && isExpanded && (
           <div className="border-t border-slate-300 pt-4 px-6 pb-4">
-            <div className="text-breeze-700 text-sm prose prose-sm max-w-none">
-              <ReactMarkdown
-                components={{
-                  p: ({ children }) => <p className="mb-2">{children}</p>,
-                  h1: ({ children }) => <h4 className="text-base font-semibold text-breeze-800 mb-2 mt-4 first:mt-0">{children}</h4>,
-                  h2: ({ children }) => <h5 className="text-sm font-semibold text-breeze-800 mb-2 mt-3 first:mt-0">{children}</h5>,
-                  h3: ({ children }) => <h6 className="text-sm font-semibold text-breeze-800 mb-1 mt-2 first:mt-0">{children}</h6>,
-                  ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1 pl-4">{children}</ul>,
-                  ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1 pl-4">{children}</ol>,
-                  li: ({ children }) => <li className="text-sm text-breeze-700">{children}</li>,
-                  a: ({ href, children }) => <a href={href} className="text-ocean-300 hover:text-ocean-200 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
-                  code: ({ children }) => <code className="bg-slate-200 px-2 py-1 rounded text-sm font-mono">{children}</code>,
-                  pre: ({ children }) => <pre className="bg-slate-100 border border-slate-300 rounded-lg p-3 mb-3 overflow-x-auto">{children}</pre>,
-                  blockquote: ({ children }) => <blockquote className="border-l-4 border-ocean-400/50 pl-4 mb-3 italic text-breeze-600">{children}</blockquote>
-                }}
-              >
-                {project.description}
-              </ReactMarkdown>
+            <div className="flex items-center justify-between mb-2">
+              <span className="text-sm font-medium text-breeze-800">Description</span>
+              {!isEditingDescription && (
+                <button
+                  onClick={handleStartEdit}
+                  className="flex items-center space-x-1 px-2 py-1 text-xs bg-ocean-500/20 hover:bg-ocean-500/30 text-ocean-700 rounded-lg transition-colors"
+                >
+                  <Edit3 className="w-3 h-3" />
+                  <span>Edit</span>
+                </button>
+              )}
             </div>
+            
+            {isEditingDescription ? (
+              <div className="space-y-3">
+                <textarea
+                  value={editedDescription}
+                  onChange={(e) => setEditedDescription(e.target.value)}
+                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-breeze-800 resize-none focus:outline-none focus:ring-2 focus:ring-ocean-400/50"
+                  rows={6}
+                  placeholder="Enter description..."
+                />
+                
+                {saveError && (
+                  <p className="text-red-600 text-xs">{saveError}</p>
+                )}
+                
+                <div className="flex items-center space-x-2">
+                  <button
+                    onClick={handleSaveDescription}
+                    disabled={isSaving}
+                    className="flex items-center space-x-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    {isSaving ? (
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                    ) : (
+                      <Save className="w-3 h-3" />
+                    )}
+                    <span>{isSaving ? 'Saving...' : 'Save'}</span>
+                  </button>
+                  <button
+                    onClick={handleCancelEdit}
+                    disabled={isSaving}
+                    className="flex items-center space-x-1 px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                  >
+                    <X className="w-3 h-3" />
+                    <span>Cancel</span>
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="text-breeze-700 text-sm prose prose-sm max-w-none">
+                <ReactMarkdown
+                  components={{
+                    p: ({ children }) => <p className="mb-2">{children}</p>,
+                    h1: ({ children }) => <h4 className="text-base font-semibold text-breeze-800 mb-2 mt-4 first:mt-0">{children}</h4>,
+                    h2: ({ children }) => <h5 className="text-sm font-semibold text-breeze-800 mb-2 mt-3 first:mt-0">{children}</h5>,
+                    h3: ({ children }) => <h6 className="text-sm font-semibold text-breeze-800 mb-1 mt-2 first:mt-0">{children}</h6>,
+                    ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1 pl-4">{children}</ul>,
+                    ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1 pl-4">{children}</ol>,
+                    li: ({ children }) => <li className="text-sm text-breeze-700">{children}</li>,
+                    a: ({ href, children }) => <a href={href} className="text-ocean-300 hover:text-ocean-200 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+                    code: ({ children }) => <code className="bg-slate-200 px-2 py-1 rounded text-sm font-mono">{children}</code>,
+                    pre: ({ children }) => <pre className="bg-slate-100 border border-slate-300 rounded-lg p-3 mb-3 overflow-x-auto">{children}</pre>,
+                    blockquote: ({ children }) => <blockquote className="border-l-4 border-ocean-400/50 pl-4 mb-3 italic text-breeze-600">{children}</blockquote>
+                  }}
+                >
+                  {project.description}
+                </ReactMarkdown>
+              </div>
+            )}
           </div>
         )}
       </div>
@@ -282,25 +377,77 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
       {/* Expandable Description */}
       {project.description && isExpanded && (
         <div className="border-t border-slate-300 pt-4 mt-3">
-          <div className="text-breeze-700 text-sm prose prose-sm max-w-none">
-            <ReactMarkdown
-              components={{
-                p: ({ children }) => <p className="mb-2">{children}</p>,
-                h1: ({ children }) => <h4 className="text-base font-semibold text-breeze-800 mb-2 mt-4 first:mt-0">{children}</h4>,
-                h2: ({ children }) => <h5 className="text-sm font-semibold text-breeze-800 mb-2 mt-3 first:mt-0">{children}</h5>,
-                h3: ({ children }) => <h6 className="text-sm font-semibold text-breeze-800 mb-1 mt-2 first:mt-0">{children}</h6>,
-                ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1 pl-4">{children}</ul>,
-                ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1 pl-4">{children}</ol>,
-                li: ({ children }) => <li className="text-sm text-breeze-700">{children}</li>,
-                a: ({ href, children }) => <a href={href} className="text-ocean-300 hover:text-ocean-200 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
-                code: ({ children }) => <code className="bg-slate-200 px-2 py-1 rounded text-sm font-mono">{children}</code>,
-                pre: ({ children }) => <pre className="bg-slate-100 border border-slate-300 rounded-lg p-3 mb-3 overflow-x-auto">{children}</pre>,
-                blockquote: ({ children }) => <blockquote className="border-l-4 border-ocean-400/50 pl-4 mb-3 italic text-breeze-600">{children}</blockquote>
-              }}
-            >
-              {project.description}
-            </ReactMarkdown>
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-medium text-breeze-800">Description</span>
+            {!isEditingDescription && (
+              <button
+                onClick={handleStartEdit}
+                className="flex items-center space-x-1 px-3 py-1 text-xs bg-ocean-500/20 hover:bg-ocean-500/30 text-ocean-700 rounded-lg transition-colors"
+              >
+                <Edit3 className="w-4 h-4" />
+                <span>Edit Description</span>
+              </button>
+            )}
           </div>
+          
+          {isEditingDescription ? (
+            <div className="space-y-4">
+              <textarea
+                value={editedDescription}
+                onChange={(e) => setEditedDescription(e.target.value)}
+                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-breeze-800 resize-none focus:outline-none focus:ring-2 focus:ring-ocean-400/50"
+                rows={8}
+                placeholder="Enter description..."
+              />
+              
+              {saveError && (
+                <p className="text-red-600 text-sm">{saveError}</p>
+              )}
+              
+              <div className="flex items-center space-x-3">
+                <button
+                  onClick={handleSaveDescription}
+                  disabled={isSaving}
+                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                >
+                  {isSaving ? (
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                  ) : (
+                    <Save className="w-4 h-4" />
+                  )}
+                  <span>{isSaving ? 'Saving...' : 'Save Changes'}</span>
+                </button>
+                <button
+                  onClick={handleCancelEdit}
+                  disabled={isSaving}
+                  className="flex items-center space-x-2 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                >
+                  <X className="w-4 h-4" />
+                  <span>Cancel</span>
+                </button>
+              </div>
+            </div>
+          ) : (
+            <div className="text-breeze-700 text-sm prose prose-sm max-w-none">
+              <ReactMarkdown
+                components={{
+                  p: ({ children }) => <p className="mb-2">{children}</p>,
+                  h1: ({ children }) => <h4 className="text-base font-semibold text-breeze-800 mb-2 mt-4 first:mt-0">{children}</h4>,
+                  h2: ({ children }) => <h5 className="text-sm font-semibold text-breeze-800 mb-2 mt-3 first:mt-0">{children}</h5>,
+                  h3: ({ children }) => <h6 className="text-sm font-semibold text-breeze-800 mb-1 mt-2 first:mt-0">{children}</h6>,
+                  ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1 pl-4">{children}</ul>,
+                  ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1 pl-4">{children}</ol>,
+                  li: ({ children }) => <li className="text-sm text-breeze-700">{children}</li>,
+                  a: ({ href, children }) => <a href={href} className="text-ocean-300 hover:text-ocean-200 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+                  code: ({ children }) => <code className="bg-slate-200 px-2 py-1 rounded text-sm font-mono">{children}</code>,
+                  pre: ({ children }) => <pre className="bg-slate-100 border border-slate-300 rounded-lg p-3 mb-3 overflow-x-auto">{children}</pre>,
+                  blockquote: ({ children }) => <blockquote className="border-l-4 border-ocean-400/50 pl-4 mb-3 italic text-breeze-600">{children}</blockquote>
+                }}
+              >
+                {project.description}
+              </ReactMarkdown>
+            </div>
+          )}
         </div>
       )}
     </div>
