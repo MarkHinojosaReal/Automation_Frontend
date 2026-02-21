@@ -35,9 +35,9 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
       <div className="flex min-h-full items-center justify-center p-4">
         <div className="relative bg-white rounded-lg shadow-xl max-w-md w-full p-6">
           {/* Icon */}
-          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-yellow-100 mb-4">
+          <div className="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-priority-medium/10 mb-4">
             <svg 
-              className="h-6 w-6 text-yellow-600" 
+              className="h-6 w-6 text-priority-medium" 
               fill="none" 
               viewBox="0 0 24 24" 
               stroke="currentColor"
@@ -53,10 +53,10 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
           
           {/* Content */}
           <div className="text-center">
-            <h3 className="text-lg font-semibold text-gray-900 mb-2">
+            <h3 className="text-lg font-semibold text-breeze-900 mb-2">
               {title}
             </h3>
-            <p className="text-sm text-gray-600 mb-6">
+            <p className="text-sm text-breeze-600 mb-6">
               {message}
             </p>
           </div>
@@ -67,7 +67,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               type="button"
               onClick={onCancel}
               disabled={isLoading}
-              className="flex-1 px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-breeze-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 text-sm font-medium text-breeze-700 bg-white border border-breeze-300 rounded-md hover:bg-breeze-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ocean-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {cancelText}
             </button>
@@ -75,7 +75,7 @@ export const ConfirmationModal: React.FC<ConfirmationModalProps> = ({
               type="button"
               onClick={onConfirm}
               disabled={isLoading}
-              className="flex-1 px-4 py-2 text-sm font-medium text-white bg-breeze-600 border border-transparent rounded-md hover:bg-breeze-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-breeze-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex-1 px-4 py-2 text-sm font-medium text-white bg-breeze-600 border border-transparent rounded-md hover:bg-breeze-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-ocean-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? 'Processing...' : confirmText}
             </button>

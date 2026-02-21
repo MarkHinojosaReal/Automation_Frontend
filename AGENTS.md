@@ -20,7 +20,8 @@ bd update <id> --status=in_progress
 
 ### Before Closing an Issue
 
-**Prompt the user to test the changes** before closing. Do not close until the user has confirmed testing or explicitly approves.
+1. **Always run the build** (`npm run build`) to ensure no breaking changes were made.
+2. **Prompt the user to test the changes** before closing. Do not close until the user has confirmed testing or explicitly approves.
 
 ### Closing an Issue
 
