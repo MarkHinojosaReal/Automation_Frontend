@@ -1,6 +1,7 @@
 import React, { useState } from "react"
 import { Sidebar } from "./Sidebar"
 import { Menu, X, User, LogOut } from "lucide-react"
+import logo from "../images/logo.png"
 import { useAuth } from "../contexts/AuthContext"
 
 interface LayoutProps {
@@ -38,9 +39,7 @@ export function Layout({ children, title }: LayoutProps) {
       <div className="lg:hidden bg-ocean-600 shadow-lg relative z-50">
         <div className="flex items-center justify-between p-4">
           <div className="flex items-center space-x-3">
-            <div className="font-mono font-bold text-xs tracking-tight text-white">
-              AUTOMATION OPS
-            </div>
+            <img src={logo} alt="Automation Ops" className="h-12 w-auto" />
             {title && <h1 className="text-white font-semibold text-lg">{title}</h1>}
           </div>
           <div className="flex items-center space-x-2">

@@ -1,5 +1,6 @@
 import React, { useMemo } from "react"
 import { Link, useLocation } from "react-router-dom"
+import logo from "../images/logo.png"
 import { 
   Home, 
   Folder,
@@ -99,9 +100,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
     } lg:translate-x-0`}>
       {/* Logo Section - Hidden on mobile (shown in header) */}
       <div className="p-4 pt-6 pb-6 justify-center hidden lg:flex">
-        <h1 className="text-white font-mono font-bold text-lg tracking-tight">
-          AUTOMATION OPS
-        </h1>
+        <img src={logo} alt="Automation Ops" className="h-24 w-auto" />
       </div>
       
       {/* Mobile logo/header spacing */}

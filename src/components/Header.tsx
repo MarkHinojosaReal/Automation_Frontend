@@ -1,5 +1,6 @@
 import React from "react"
 import { Link } from "react-router-dom"
+import logo from "../images/logo.png"
 
 interface HeaderProps {
   title?: string
@@ -11,9 +12,7 @@ export function Header({ title = "YouTrack Dashboard" }: HeaderProps) {
       <div className="flex items-center justify-between h-full px-6">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-3">
-            <div className="font-mono font-bold text-sm tracking-tight text-breeze-800">
-              AUTOMATION OPS
-            </div>
+            <img src={logo} alt="Automation Ops" className="h-12 w-auto" />
             <h1 className="text-xl font-semibold text-breeze-800">{title}</h1>
           </div>
         </div>

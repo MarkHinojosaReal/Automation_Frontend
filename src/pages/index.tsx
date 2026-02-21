@@ -109,6 +109,29 @@ function IndexPageContent() {
     return projects.filter(p => p.state.name.includes('Progress'))
   }, [projects])
 
+  const YOUTRACK_BASE = 'https://realbrokerage.youtrack.cloud'
+
+  const priorityYouTrackNames: Record<string, string> = {
+    'Low': '3 - Low',
+    'Medium': '2 - Medium',
+    'High': '1 - High',
+    'Urgent': '0 - Urgent',
+    'TBD': 'TBD'
+  }
+
+  const handlePriorityBarClick = (name: string) => {
+    const ytPriority = priorityYouTrackNames[name] || name
+    const priorityParam = ytPriority.includes(' ') ? `{${ytPriority}}` : ytPriority
+    const query = `type: Project priority: ${priorityParam}`
+    window.open(`${YOUTRACK_BASE}/projects/ATOP/issues?q=${encodeURIComponent(query)}`, '_blank')
+  }
+
+  const handleStatusBarClick = (name: string) => {
+    const statusParam = name.includes(' ') ? `{${name}}` : name
+    const query = `type: Project state: ${statusParam}`
+    window.open(`${YOUTRACK_BASE}/projects/ATOP/issues?q=${encodeURIComponent(query)}`, '_blank')
+  }
+
   if (projectsLoading) {
     return (
       <Layout title="Home">
@@ -135,30 +158,36 @@ function IndexPageContent() {
         <StatsCard
           title="Total Projects"
           value={projectStats.totalProjects}
+          href={`${YOUTRACK_BASE}/projects/ATOP/issues?q=${encodeURIComponent('type: Project')}`}
         />
         <StatsCard
           title="Open Projects"
           value={projectStats.openProjects}
+          href={`${YOUTRACK_BASE}/projects/ATOP/issues?q=${encodeURIComponent('type: Project state: {In Progress}, Backlog, Discovery, {To Do}, {Needs Scoping}')}`}
         />
         <StatsCard
           title="In Progress"
           value={projectStats.inProgressProjects}
+          href={`${YOUTRACK_BASE}/projects/ATOP/issues?q=${encodeURIComponent('type: Project state: {In Progress}')}`}
         />
         <StatsCard
           title="Completed Projects"
           value={projectStats.resolvedProjects}
+          href={`${YOUTRACK_BASE}/projects/ATOP/issues?q=${encodeURIComponent('type: Project state: Archived, Done')}`}
         />
       </div>
 
       {/* Project Bar Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
-        <BarChartCard 
-          title="Projects by Priority" 
-          data={projectsLoading ? [] : projectPriorityData} 
+        <BarChartCard
+          title="Projects by Priority"
+          data={projectsLoading ? [] : projectPriorityData}
+          onBarClick={handlePriorityBarClick}
         />
-        <BarChartCard 
-          title="Projects by Status" 
-          data={projectsLoading ? [] : projectStatusData} 
+        <BarChartCard
+          title="Projects by Status"
+          data={projectsLoading ? [] : projectStatusData}
+          onBarClick={handleStatusBarClick}
         />
       </div>
 
