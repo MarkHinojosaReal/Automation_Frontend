@@ -96,22 +96,22 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-100 flex items-center justify-center">
-      <div className="bg-white p-8 rounded-xl shadow-md max-w-md w-full mx-4">
+    <div className="min-h-screen bg-breeze-50 flex items-center justify-center">
+      <div className="bg-white p-8 rounded-xl shadow-md max-w-md w-full mx-4 border border-breeze-100">
         <div className="text-center">
           {/* Key Icon */}
           <div className="flex justify-center mb-6">
-            <div className="bg-gray-900 rounded-full p-6 inline-flex items-center justify-center -mt-16">
+            <div className="bg-breeze-900 rounded-full p-6 inline-flex items-center justify-center -mt-16 shadow-xl">
               <KeyRound className="w-10 h-10 text-white" strokeWidth={2} />
             </div>
           </div>
           
-          <div className="text-3xl font-bold text-gray-800 mb-2">Login</div>
-          <p className="text-sm text-gray-500 mb-8">Only @therealbrokerage.com accounts are currently supported</p>
+          <div className="text-3xl font-bold text-breeze-900 mb-2">Login</div>
+          <p className="text-sm text-breeze-500 mb-8">Only @therealbrokerage.com accounts are currently supported</p>
           
           <div 
             id="error-message" 
-            className="hidden bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4"
+            className="hidden bg-priority-high/10 border border-priority-high/20 text-priority-high px-4 py-3 rounded-lg mb-4 text-sm font-medium"
           >
           </div>
           

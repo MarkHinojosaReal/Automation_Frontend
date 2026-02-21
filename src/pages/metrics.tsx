@@ -151,10 +151,10 @@ function MetricsPageContent() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-breeze-600 text-sm font-medium">Success Rate</p>
-                <p className="text-3xl font-bold text-green-700">{data.successRate.toFixed(1)}%</p>
+                <p className="text-3xl font-bold text-status-done">{data.successRate.toFixed(1)}%</p>
               </div>
-              <div className="p-3 bg-green-500/20 rounded-xl">
-                <CheckCircle className="w-6 h-6 text-green-600" />
+              <div className="p-3 bg-status-done/20 rounded-xl">
+                <CheckCircle className="w-6 h-6 text-status-done" />
               </div>
             </div>
           </div>
@@ -189,7 +189,7 @@ function MetricsPageContent() {
           {/* Status Distribution */}
           <div className="card">
             <h3 className="text-lg font-semibold text-breeze-800 mb-6 flex items-center space-x-2">
-              <CheckCircle className="w-5 h-5 text-green-600" />
+              <CheckCircle className="w-5 h-5 text-status-done" />
               <span>Execution Status Distribution</span>
             </h3>
             <div className="h-64">
@@ -256,14 +256,14 @@ function MetricsPageContent() {
                   <Area
                     type="monotone"
                     dataKey="executions"
-                    stroke="#0ea5e9"
+                    stroke="#06b6d4"
                     fill="url(#colorExecutions)"
                     strokeWidth={2}
                   />
                   <defs>
                     <linearGradient id="colorExecutions" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#0ea5e9" stopOpacity={0.3}/>
-                      <stop offset="95%" stopColor="#0ea5e9" stopOpacity={0.05}/>
+                      <stop offset="5%" stopColor="#06b6d4" stopOpacity={0.3}/>
+                      <stop offset="95%" stopColor="#06b6d4" stopOpacity={0.05}/>
                     </linearGradient>
                   </defs>
                 </AreaChart>
@@ -363,7 +363,7 @@ function MetricsPageContent() {
             <div className="inline-block min-w-full align-middle">
               <table className="w-full">
               <thead>
-                <tr className="border-b border-slate-200">
+                <tr className="border-b border-breeze-200">
                   <th className="text-left py-3 px-4 font-semibold text-breeze-700 text-sm">Automation ID</th>
                   <th className="text-left py-3 px-4 font-semibold text-breeze-700 text-sm">Start Time</th>
                   <th className="text-left py-3 px-4 font-semibold text-breeze-700 text-sm">Duration</th>
@@ -372,9 +372,9 @@ function MetricsPageContent() {
               </thead>
               <tbody>
                 {data.recentExecutions?.map((execution) => (
-                  <tr key={execution.id} className="border-b border-slate-100 hover:bg-slate-50 transition-colors">
+                  <tr key={execution.id} className="border-b border-breeze-100 hover:bg-breeze-50 transition-colors">
                     <td className="py-3 px-4">
-                      <code className="text-xs bg-slate-200 px-2 py-1 rounded font-mono text-breeze-800">
+                      <code className="text-xs bg-breeze-200 px-2 py-1 rounded font-mono text-breeze-800">
                         {execution.automation_id ? `${execution.automation_id.slice(0, 8)}...` : 'N/A'}
                       </code>
                     </td>
@@ -393,10 +393,10 @@ function MetricsPageContent() {
                     <td className="py-3 px-4">
                       <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                         execution.status === 'Passed' 
-                          ? 'bg-green-100 text-green-800 border border-green-200'
+                          ? 'bg-status-done/10 text-status-done border border-status-done/20'
                           : execution.status === 'Failed'
-                          ? 'bg-red-100 text-red-800 border border-red-200'
-                          : 'bg-yellow-100 text-yellow-800 border border-yellow-200'
+                          ? 'bg-priority-high/10 text-priority-high border border-priority-high/20'
+                          : 'bg-priority-medium/10 text-priority-medium border border-priority-medium/20'
                       }`}>
                         {execution.status}
                       </span>

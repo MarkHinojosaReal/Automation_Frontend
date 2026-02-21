@@ -92,12 +92,12 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
     const normalizedPriority = normalizePriority(priorityName)
     
     switch (normalizedPriority) {
-      case 'Urgent': return "bg-red-600/20 text-red-800 border border-red-500/30"
-      case 'High': return "bg-red-500/20 text-red-700 border border-red-400/30"
-      case 'Medium': return "bg-yellow-500/20 text-yellow-800 border border-yellow-400/30"
-      case 'Low': return "bg-green-500/20 text-green-800 border border-green-400/30"
-      case 'TBD': return "bg-teal-500/20 text-teal-800 border border-teal-400/30"
-      default: return "bg-breeze-500/20 text-breeze-800 border border-breeze-400/30"
+      case 'Urgent': return "bg-priority-urgent/10 text-priority-urgent border border-priority-urgent/20"
+      case 'High': return "bg-priority-high/10 text-priority-high border border-priority-high/20"
+      case 'Medium': return "bg-priority-medium/10 text-priority-medium border border-priority-medium/20"
+      case 'Low': return "bg-priority-low/10 text-priority-low border border-priority-low/20"
+      case 'TBD': return "bg-priority-tbd/10 text-priority-tbd border border-priority-tbd/20"
+      default: return "bg-breeze-500/10 text-breeze-800 border border-breeze-400/20"
     }
   }
 
@@ -117,15 +117,15 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
     
     switch (normalizedStatus) {
       case 'To Do':
-        return "bg-blue-500/20 text-blue-800 border border-blue-400/30"
+        return "bg-status-todo/10 text-status-todo border border-status-todo/20"
       case 'In Progress':
-        return "bg-yellow-500/20 text-yellow-800 border border-yellow-400/30"
+        return "bg-status-progress/10 text-status-progress border border-status-progress/20"
       case 'Done':
-        return "bg-green-500/20 text-green-800 border border-green-400/30"
+        return "bg-status-done/10 text-status-done border border-status-done/20"
       case 'Needs Scoping':
-        return "bg-teal-500/20 text-teal-800 border border-teal-400/30"
+        return "bg-status-scoping/10 text-status-scoping border border-status-scoping/20"
       default:
-        return "bg-breeze-500/20 text-breeze-800 border border-breeze-400/30"
+        return "bg-breeze-500/10 text-breeze-800 border border-breeze-400/20"
     }
   }
 
@@ -133,7 +133,7 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
     return (
       <div
         onClick={() => setIsExpanded(!isExpanded)}
-        className="block hover:bg-slate-200 transition-all duration-300 border-b border-slate-300 last:border-b-0 backdrop-blur-sm cursor-pointer"
+        className="block hover:bg-breeze-200 transition-all duration-300 border-b border-breeze-300 last:border-b-0 backdrop-blur-sm cursor-pointer"
       >
         <div className="py-4 px-6">
           <div className="flex items-center justify-between gap-4">
@@ -143,7 +143,7 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={(e) => e.stopPropagation()}
-                className="text-sm font-mono text-breeze-600 bg-slate-200 px-2 py-1 rounded-lg flex-shrink-0 hover:bg-slate-300 hover:text-breeze-800 transition-colors cursor-pointer"
+                className="text-sm font-mono text-breeze-600 bg-breeze-200 px-2 py-1 rounded-lg flex-shrink-0 hover:bg-breeze-300 hover:text-breeze-800 transition-colors cursor-pointer"
               >
                 {project.idReadable}
               </a>
@@ -173,22 +173,22 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
         </div>
         
         {/* Time Savings and Cost Impact for Compact View */}
-        <div className="px-6 py-2 border-t border-slate-200">
+        <div className="px-6 py-2 border-t border-breeze-200">
           <div className="flex items-center space-x-6 text-sm text-breeze-600">
             <div className="flex items-center space-x-2">
               <span className="text-breeze-500">Time Saved:</span>
-              <span className="text-green-600 font-medium">{formatSavedTime(project.savedTimeMins)}</span>
+              <span className="text-status-done font-medium">{formatSavedTime(project.savedTimeMins)}</span>
             </div>
             <div className="flex items-center space-x-2">
               <span className="text-breeze-500">Cost Impact:</span>
-              <span className="text-green-700 font-medium">{formatCostImpact(project.savedTimeMins)}</span>
+              <span className="text-status-done font-medium">{formatCostImpact(project.savedTimeMins)}</span>
             </div>
           </div>
         </div>
         
         {/* Expandable Description for Compact View */}
         {project.description && isExpanded && (
-          <div className="border-t border-slate-300 pt-4 px-6 pb-4">
+          <div className="border-t border-breeze-300 pt-4 px-6 pb-4">
             <div className="flex items-center justify-between mb-2">
               <span className="text-sm font-medium text-breeze-800">Description</span>
               {!isEditingDescription && (
@@ -207,60 +207,59 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
                 <textarea
                   value={editedDescription}
                   onChange={(e) => setEditedDescription(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-slate-300 rounded-lg text-breeze-800 resize-none focus:outline-none focus:ring-2 focus:ring-ocean-400/50"
+                  className="w-full px-3 py-2 bg-white border border-breeze-300 rounded-lg text-breeze-800 resize-none focus:outline-none focus:ring-2 focus:ring-ocean-400/50"
                   rows={6}
                   placeholder="Enter description..."
                 />
                 
                 {saveError && (
-                  <p className="text-red-600 text-xs">{saveError}</p>
+                  <p className="text-priority-high text-xs">{saveError}</p>
                 )}
                 
-                <div className="flex items-center space-x-2">
-                  <button
-                    onClick={handleSaveDescription}
-                    disabled={isSaving}
-                    className="flex items-center space-x-1 px-3 py-1 bg-green-600 hover:bg-green-700 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    {isSaving ? (
-                      <Loader2 className="w-3 h-3 animate-spin" />
-                    ) : (
-                      <Save className="w-3 h-3" />
-                    )}
-                    <span>{isSaving ? 'Saving...' : 'Save'}</span>
-                  </button>
-                  <button
-                    onClick={handleCancelEdit}
-                    disabled={isSaving}
-                    className="flex items-center space-x-1 px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
-                  >
-                    <X className="w-3 h-3" />
-                    <span>Cancel</span>
-                  </button>
-                </div>
-              </div>
-            ) : (
-              <div className="text-breeze-700 text-sm prose prose-sm max-w-none">
-                <ReactMarkdown
-                  components={{
-                    p: ({ children }) => <p className="mb-2">{children}</p>,
-                    h1: ({ children }) => <h4 className="text-base font-semibold text-breeze-800 mb-2 mt-4 first:mt-0">{children}</h4>,
-                    h2: ({ children }) => <h5 className="text-sm font-semibold text-breeze-800 mb-2 mt-3 first:mt-0">{children}</h5>,
-                    h3: ({ children }) => <h6 className="text-sm font-semibold text-breeze-800 mb-1 mt-2 first:mt-0">{children}</h6>,
-                    ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1 pl-4">{children}</ul>,
-                    ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1 pl-4">{children}</ol>,
-                    li: ({ children }) => <li className="text-sm text-breeze-700">{children}</li>,
-                    a: ({ href, children }) => <a href={href} className="text-ocean-300 hover:text-ocean-200 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
-                    code: ({ children }) => <code className="bg-slate-200 px-2 py-1 rounded text-sm font-mono">{children}</code>,
-                    pre: ({ children }) => <pre className="bg-slate-100 border border-slate-300 rounded-lg p-3 mb-3 overflow-x-auto">{children}</pre>,
-                    blockquote: ({ children }) => <blockquote className="border-l-4 border-ocean-400/50 pl-4 mb-3 italic text-breeze-600">{children}</blockquote>
-                  }}
-                >
-                  {project.description}
-                </ReactMarkdown>
-              </div>
-            )}
-          </div>
+                                  <div className="flex items-center space-x-2">
+                                  <button
+                                    onClick={handleSaveDescription}
+                                    disabled={isSaving}
+                                    className="flex items-center space-x-1 px-3 py-1 bg-status-done hover:bg-priority-low text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                                  >
+                                    {isSaving ? (
+                                      <Loader2 className="w-3 h-3 animate-spin" />
+                                    ) : (
+                                      <Save className="w-3 h-3" />
+                                    )}
+                                    <span>{isSaving ? 'Saving...' : 'Save'}</span>
+                                  </button>
+                                  <button
+                                    onClick={handleCancelEdit}
+                                    disabled={isSaving}
+                                    className="flex items-center space-x-1 px-3 py-1 bg-breeze-500 hover:bg-breeze-600 text-white text-xs font-medium rounded-lg transition-colors disabled:opacity-50"
+                                  >
+                                    <X className="w-3 h-3" />
+                                    <span>Cancel</span>
+                                  </button>
+                                </div>
+                              </div>
+                            ) : (
+                              <div className="text-breeze-700 text-sm prose prose-sm max-w-none">
+                                <ReactMarkdown
+                                  components={{
+                                    p: ({ children }) => <p className="mb-2">{children}</p>,
+                                    h1: ({ children }) => <h4 className="text-base font-semibold text-breeze-800 mb-2 mt-4 first:mt-0">{children}</h4>,
+                                    h2: ({ children }) => <h5 className="text-sm font-semibold text-breeze-800 mb-2 mt-3 first:mt-0">{children}</h5>,
+                                    h3: ({ children }) => <h6 className="text-sm font-semibold text-breeze-800 mb-1 mt-2 first:mt-0">{children}</h6>,
+                                    ul: ({ children }) => <ul className="list-disc list-inside mb-3 space-y-1 pl-4">{children}</ul>,
+                                    ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1 pl-4">{children}</ol>,
+                                    li: ({ children }) => <li className="text-sm text-breeze-700">{children}</li>,
+                                    a: ({ href, children }) => <a href={href} className="text-ocean-300 hover:text-ocean-200 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
+                                    code: ({ children }) => <code className="bg-breeze-200 px-2 py-1 rounded text-sm font-mono">{children}</code>,
+                                    pre: ({ children }) => <pre className="bg-breeze-100 border border-breeze-300 rounded-lg p-3 mb-3 overflow-x-auto">{children}</pre>,
+                                    blockquote: ({ children }) => <blockquote className="border-l-4 border-ocean-400/50 pl-4 mb-3 italic text-breeze-600">{children}</blockquote>
+                                  }}
+                                >
+                                  {project.description}
+                                </ReactMarkdown>
+                              </div>
+                            )}          </div>
         )}
       </div>
     )
@@ -279,7 +278,7 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
             target="_blank"
             rel="noopener noreferrer"
             onClick={(e) => e.stopPropagation()}
-            className="text-sm font-mono text-breeze-600 bg-slate-200 px-3 py-1 rounded-lg flex-shrink-0 hover:bg-slate-300 hover:text-breeze-800 transition-colors cursor-pointer"
+            className="text-sm font-mono text-breeze-600 bg-breeze-200 px-3 py-1 rounded-lg flex-shrink-0 hover:bg-breeze-300 hover:text-breeze-800 transition-colors cursor-pointer"
           >
             {project.idReadable}
           </a>
@@ -290,7 +289,7 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
           </div>
         </div>
         {project.description && (
-          <div className="flex items-center space-x-1 px-2 py-1 text-xs text-breeze-600 hover:text-breeze-800 hover:bg-slate-200 rounded-lg transition-all duration-200 flex-shrink-0">
+          <div className="flex items-center space-x-1 px-2 py-1 text-xs text-breeze-600 hover:text-breeze-800 hover:bg-breeze-200 rounded-lg transition-all duration-200 flex-shrink-0">
             {isExpanded ? (
               <>
                 <span>Hide</span>
@@ -366,17 +365,17 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
       <div className="flex items-center space-x-6 mb-3 text-sm text-breeze-600">
         <div className="flex items-center space-x-2">
           <span className="text-breeze-500">Time Saved:</span>
-          <span className="text-green-600 font-medium">{formatSavedTime(project.savedTimeMins)}</span>
+          <span className="text-status-done font-medium">{formatSavedTime(project.savedTimeMins)}</span>
         </div>
         <div className="flex items-center space-x-2">
           <span className="text-breeze-500">Cost Impact:</span>
-          <span className="text-green-700 font-medium">{formatCostImpact(project.savedTimeMins)}</span>
+          <span className="text-status-done font-medium">{formatCostImpact(project.savedTimeMins)}</span>
         </div>
       </div>
 
       {/* Expandable Description */}
       {project.description && isExpanded && (
-        <div className="border-t border-slate-300 pt-4 mt-3">
+        <div className="border-t border-breeze-300 pt-4 mt-3">
           <div className="flex items-center justify-between mb-3">
             <span className="text-sm font-medium text-breeze-800">Description</span>
             {!isEditingDescription && (
@@ -395,20 +394,20 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
               <textarea
                 value={editedDescription}
                 onChange={(e) => setEditedDescription(e.target.value)}
-                className="w-full px-4 py-3 bg-white border border-slate-300 rounded-lg text-breeze-800 resize-none focus:outline-none focus:ring-2 focus:ring-ocean-400/50"
+                className="w-full px-4 py-3 bg-white border border-breeze-300 rounded-lg text-breeze-800 resize-none focus:outline-none focus:ring-2 focus:ring-ocean-400/50"
                 rows={8}
                 placeholder="Enter description..."
               />
               
               {saveError && (
-                <p className="text-red-600 text-sm">{saveError}</p>
+                <p className="text-priority-high text-sm">{saveError}</p>
               )}
               
               <div className="flex items-center space-x-3">
                 <button
                   onClick={handleSaveDescription}
                   disabled={isSaving}
-                  className="flex items-center space-x-2 px-4 py-2 bg-green-600 hover:bg-green-700 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                  className="flex items-center space-x-2 px-4 py-2 bg-status-done hover:bg-priority-low text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
                 >
                   {isSaving ? (
                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -420,7 +419,7 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
                 <button
                   onClick={handleCancelEdit}
                   disabled={isSaving}
-                  className="flex items-center space-x-2 px-4 py-2 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
+                  className="flex items-center space-x-2 px-4 py-2 bg-breeze-500 hover:bg-breeze-600 text-white text-sm font-medium rounded-lg transition-colors disabled:opacity-50"
                 >
                   <X className="w-4 h-4" />
                   <span>Cancel</span>
@@ -439,8 +438,8 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
                   ol: ({ children }) => <ol className="list-decimal list-inside mb-3 space-y-1 pl-4">{children}</ol>,
                   li: ({ children }) => <li className="text-sm text-breeze-700">{children}</li>,
                   a: ({ href, children }) => <a href={href} className="text-ocean-300 hover:text-ocean-200 underline" target="_blank" rel="noopener noreferrer">{children}</a>,
-                  code: ({ children }) => <code className="bg-slate-200 px-2 py-1 rounded text-sm font-mono">{children}</code>,
-                  pre: ({ children }) => <pre className="bg-slate-100 border border-slate-300 rounded-lg p-3 mb-3 overflow-x-auto">{children}</pre>,
+                  code: ({ children }) => <code className="bg-breeze-200 px-2 py-1 rounded text-sm font-mono">{children}</code>,
+                  pre: ({ children }) => <pre className="bg-breeze-100 border border-breeze-300 rounded-lg p-3 mb-3 overflow-x-auto">{children}</pre>,
                   blockquote: ({ children }) => <blockquote className="border-l-4 border-ocean-400/50 pl-4 mb-3 italic text-breeze-600">{children}</blockquote>
                 }}
               >

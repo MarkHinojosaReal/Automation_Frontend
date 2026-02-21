@@ -45,3 +45,7 @@ bd sync               # Sync beads with git
 - Agents **stage** changes with `git add`
 - Agents **never commit** — the user retains full control of commits
 - Run `bd sync` to sync beads changes with git when appropriate
+
+## Dev and Production
+
+**Any changes made to dev (e.g. `server/proxy.js`) must also be made to prod (e.g. `server/production-server.js`).** Keep dev and production code in sync—do not update one without updating the other.

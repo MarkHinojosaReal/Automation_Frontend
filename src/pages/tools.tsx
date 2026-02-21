@@ -428,7 +428,7 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="p-3 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl shadow-lg">
+              <div className="p-3 bg-gradient-to-br from-ocean-400 to-ocean-600 rounded-xl shadow-lg">
                 <Database className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -454,7 +454,7 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
                     value={cardId}
                     onChange={(e) => setCardId(e.target.value)}
                     placeholder="Enter Metabase card ID (e.g., 5342)"
-                    className="w-full px-3 py-2 bg-white border border-white/20 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-400/50 focus:border-purple-400/50"
+                    className="w-full px-3 py-2 bg-white border border-breeze-200 rounded-lg text-breeze-900 placeholder-breeze-400 focus:outline-none focus:ring-2 focus:ring-ocean-400/50 focus:border-ocean-400/50"
                     onKeyDown={(e) => e.key === 'Enter' && handleInspectCard()}
                   />
                 </div>
@@ -480,17 +480,17 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
               </div>
 
               {inspectorError && (
-                <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
-                  <p className="text-red-300 text-sm">{inspectorError}</p>
+                <div className="p-4 bg-priority-high/10 border border-priority-high/20 rounded-lg">
+                  <p className="text-priority-high text-sm">{inspectorError}</p>
                 </div>
               )}
 
               {inspectorResult && (
                 <div className="space-y-4">
                   {/* Card Title */}
-                  <div className="bg-white border border-gray-200 rounded-lg p-4">
-                    <h4 className="font-semibold text-gray-800 mb-2">Card Information</h4>
-                    <div className="text-sm text-gray-600">
+                  <div className="bg-white border border-breeze-200 rounded-lg p-4">
+                    <h4 className="font-semibold text-breeze-800 mb-2">Card Information</h4>
+                    <div className="text-sm text-breeze-600">
                       <p><span className="font-medium">Card ID:</span> {inspectorResult.card_id}</p>
                       <p><span className="font-medium">Card Title:</span> {inspectorResult.card_title}</p>
                     </div>
@@ -498,18 +498,18 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
 
                   {/* SQL Query */}
                   {inspectorResult.sql_query && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-4">
+                    <div className="bg-white border border-breeze-200 rounded-lg p-4">
                       <div className="flex items-center justify-between mb-3">
-                        <h4 className="font-semibold text-gray-800">SQL Query</h4>
+                        <h4 className="font-semibold text-breeze-800">SQL Query</h4>
                         <button
                           onClick={copySQLQuery}
-                          className="flex items-center space-x-1 text-sm text-purple-600 hover:text-purple-500 transition-colors"
+                          className="flex items-center space-x-1 text-sm text-ocean-600 hover:text-ocean-500 transition-colors"
                         >
                           <Copy className="w-4 h-4" />
                           <span>Copy SQL</span>
                         </button>
                       </div>
-                      <pre className="text-sm text-gray-800 whitespace-pre-wrap overflow-x-auto bg-gray-50 p-3 rounded border">
+                      <pre className="text-sm text-breeze-800 whitespace-pre-wrap overflow-x-auto bg-breeze-50 p-3 rounded border border-breeze-200">
                         {inspectorResult.sql_query}
                       </pre>
                     </div>
@@ -517,14 +517,14 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
 
                   {/* Columns */}
                   {inspectorResult.columns && inspectorResult.columns.length > 0 && (
-                    <div className="bg-white border border-gray-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-gray-800 mb-3">Columns ({inspectorResult.columns.length})</h4>
+                    <div className="bg-white border border-breeze-200 rounded-lg p-4">
+                      <h4 className="font-semibold text-breeze-800 mb-3">Columns ({inspectorResult.columns.length})</h4>
                       <div className="space-y-2">
                         {inspectorResult.columns.map((col: any) => (
                           <div key={col.index} className="flex items-center space-x-3 text-sm">
-                            <span className="font-mono text-gray-500 w-8">{col.index}.</span>
-                            <span className="font-medium text-gray-800">{col.name}</span>
-                            <span className="text-gray-500">({col.type})</span>
+                            <span className="font-mono text-breeze-400 w-8">{col.index}.</span>
+                            <span className="font-medium text-breeze-800">{col.name}</span>
+                            <span className="text-breeze-500">({col.type})</span>
                           </div>
                         ))}
                       </div>
@@ -533,9 +533,9 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
 
                   {/* Error Display */}
                   {inspectorResult.error && (
-                    <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-                      <h4 className="font-semibold text-red-800 mb-2">Error</h4>
-                      <p className="text-sm text-red-700">{inspectorResult.error}</p>
+                    <div className="bg-priority-high/10 border border-priority-high/20 rounded-lg p-4">
+                      <h4 className="font-semibold text-priority-high mb-2">Error</h4>
+                      <p className="text-sm text-priority-high">{inspectorResult.error}</p>
                     </div>
                   )}
                 </div>
@@ -569,7 +569,7 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="p-3 bg-gradient-to-br from-green-400 to-green-600 rounded-xl shadow-lg">
+              <div className="p-3 bg-gradient-to-br from-status-done/80 to-status-done rounded-xl shadow-lg">
                 <FileText className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -585,7 +585,7 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
           {generatingReport && (
             <div className="card mb-6">
               <div className="flex items-center justify-center space-x-3 py-8">
-                <Loader2 className="w-6 h-6 animate-spin text-breeze-600" />
+                <Loader2 className="w-6 h-6 animate-spin text-ocean-600" />
                 <span className="text-breeze-700 font-medium">Generating report...</span>
               </div>
             </div>
@@ -595,8 +595,8 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
           {reportError && !generatingReport && (
             <div className="card mb-6">
               <div className="space-y-4">
-                <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
-                  <p className="text-red-300 text-sm">{reportError}</p>
+                <div className="p-4 bg-priority-high/10 border border-priority-high/20 rounded-lg">
+                  <p className="text-priority-high text-sm">{reportError}</p>
                 </div>
                 <button
                   onClick={generateProjectReport}
@@ -620,7 +620,7 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
                 <div className="flex justify-center">
                   <button
                     onClick={downloadReport}
-                    className="flex items-center space-x-2 bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-lg transition-colors"
+                    className="flex items-center space-x-2 bg-status-done hover:bg-priority-low text-white px-6 py-3 rounded-lg transition-colors"
                   >
                     <Download className="w-4 h-4" />
                     <span>Download Report ({selectedProjects.size} selected)</span>
@@ -629,87 +629,87 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
 
                 {/* Summary Stats */}
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                  <div className="bg-white border border-gray-200 rounded-lg p-4">
-                    <h5 className="font-semibold text-gray-800 mb-2">Completed Projects</h5>
-                    <p className="text-2xl font-bold text-green-600">{filteredMetrics.completedProjects.length}</p>
-                    <p className="text-sm text-gray-600 mt-1">
+                  <div className="bg-white border border-breeze-200 rounded-lg p-4">
+                    <h5 className="font-semibold text-breeze-800 mb-2">Completed Projects</h5>
+                    <p className="text-2xl font-bold text-status-done">{filteredMetrics.completedProjects.length}</p>
+                    <p className="text-sm text-breeze-600 mt-1">
                       {filteredMetrics.completedTimeSaved.toFixed(0)} hrs saved
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-breeze-600">
                       ${filteredMetrics.completedCostImpact.toLocaleString()} impact
                     </p>
                   </div>
-                  <div className="bg-white border border-gray-200 rounded-lg p-4">
-                    <h5 className="font-semibold text-gray-800 mb-2">In Progress Projects</h5>
-                    <p className="text-2xl font-bold text-blue-600">{filteredMetrics.upcomingProjects.length}</p>
-                    <p className="text-sm text-gray-600 mt-1">
+                  <div className="bg-white border border-breeze-200 rounded-lg p-4">
+                    <h5 className="font-semibold text-breeze-800 mb-2">In Progress Projects</h5>
+                    <p className="text-2xl font-bold text-status-todo">{filteredMetrics.upcomingProjects.length}</p>
+                    <p className="text-sm text-breeze-600 mt-1">
                       {filteredMetrics.upcomingTimeSaved.toFixed(0)} hrs saved
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-breeze-600">
                       ${filteredMetrics.upcomingCostImpact.toLocaleString()} impact
                     </p>
                   </div>
-                  <div className="bg-white border border-gray-200 rounded-lg p-4">
-                    <h5 className="font-semibold text-gray-800 mb-2">Total Time Saved</h5>
-                    <p className="text-2xl font-bold text-purple-600">{filteredMetrics.totalTimeSaved.toFixed(0)} hrs</p>
-                    <p className="text-sm text-gray-600 mt-1">
+                  <div className="bg-white border border-breeze-200 rounded-lg p-4">
+                    <h5 className="font-semibold text-breeze-800 mb-2">Total Time Saved</h5>
+                    <p className="text-2xl font-bold text-ocean-600">{filteredMetrics.totalTimeSaved.toFixed(0)} hrs</p>
+                    <p className="text-sm text-breeze-600 mt-1">
                       Completed: {filteredMetrics.completedTimeSaved.toFixed(0)} hrs
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-breeze-600">
                       In Progress: {filteredMetrics.upcomingTimeSaved.toFixed(0)} hrs
                     </p>
                   </div>
-                  <div className="bg-white border border-gray-200 rounded-lg p-4">
-                    <h5 className="font-semibold text-gray-800 mb-2">Total Cost Impact</h5>
-                    <p className="text-2xl font-bold text-orange-600">${filteredMetrics.totalCostImpact.toLocaleString()}</p>
-                    <p className="text-sm text-gray-600 mt-1">
+                  <div className="bg-white border border-breeze-200 rounded-lg p-4">
+                    <h5 className="font-semibold text-breeze-800 mb-2">Total Cost Impact</h5>
+                    <p className="text-2xl font-bold text-priority-medium">${filteredMetrics.totalCostImpact.toLocaleString()}</p>
+                    <p className="text-sm text-breeze-600 mt-1">
                       Completed: ${filteredMetrics.completedCostImpact.toLocaleString()}
                     </p>
-                    <p className="text-sm text-gray-600">
+                    <p className="text-sm text-breeze-600">
                       In Progress: ${filteredMetrics.upcomingCostImpact.toLocaleString()}
                     </p>
                   </div>
                 </div>
 
                 {/* Completed Projects */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-xl font-bold text-gray-800 mb-4">Completed Projects</h3>
+                <div className="bg-white border border-breeze-200 rounded-lg p-6">
+                  <h3 className="text-xl font-bold text-breeze-800 mb-4">Completed Projects</h3>
                   <div className="space-y-6">
                     {reportData.completedProjects.map((project: any, index: number) => {
                       const formatted = formatProjectForReport(project)
                       const isSelected = selectedProjects.has(project.idReadable)
                       return (
-                        <div key={project.idReadable} className="border-b border-gray-100 pb-4 last:border-b-0">
+                        <div key={project.idReadable} className="border-b border-breeze-100 pb-4 last:border-b-0">
                           <div className="flex items-start space-x-3 mb-2">
                             <input
                               type="checkbox"
                               checked={isSelected}
                               onChange={() => toggleProjectSelection(project.idReadable)}
-                              className="mt-1 h-4 w-4 text-breeze-600 focus:ring-breeze-500 border-gray-300 rounded cursor-pointer"
+                              className="mt-1 h-4 w-4 text-ocean-600 focus:ring-ocean-500 border-breeze-300 rounded cursor-pointer"
                             />
                             <div className="flex-1">
                               <div className="flex items-start justify-between">
-                                <h4 className="font-semibold text-gray-800">{formatted.name}</h4>
-                                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                <h4 className="font-semibold text-breeze-800">{formatted.name}</h4>
+                                <div className="flex items-center space-x-2 text-sm text-breeze-500">
                                   <span>Initiative: {formatted.initiative}</span>
                                   <span>•</span>
                                   <span>Ticket: <a 
                                     href={`https://realbrokerage.youtrack.cloud/issue/${formatted.ticket}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-breeze-600 hover:text-breeze-700 underline"
+                                    className="text-ocean-600 hover:text-ocean-700 underline"
                                   >{formatted.ticket}</a></span>
                                 </div>
                               </div>
-                              <p className="text-gray-600 mb-3">{formatted.description}</p>
+                              <p className="text-breeze-600 mb-3">{formatted.description}</p>
                               <div className="flex items-center space-x-6 text-sm">
                                 <div className="flex items-center space-x-1">
-                                  <span className="text-gray-500">Time Savings:</span>
-                                  <span className="font-semibold text-green-600">{formatted.timeSavings.toFixed(0)} hrs</span>
+                                  <span className="text-breeze-500">Time Savings:</span>
+                                  <span className="font-semibold text-status-done">{formatted.timeSavings.toFixed(0)} hrs</span>
                                 </div>
                                 <div className="flex items-center space-x-1">
-                                  <span className="text-gray-500">Cost Impact:</span>
-                                  <span className="font-semibold text-orange-600">${formatted.costImpact.toLocaleString()}</span>
+                                  <span className="text-breeze-500">Cost Impact:</span>
+                                  <span className="font-semibold text-priority-medium">${formatted.costImpact.toLocaleString()}</span>
                                 </div>
                               </div>
                             </div>
@@ -721,45 +721,45 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
                 </div>
 
                 {/* Upcoming Projects */}
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h3 className="text-xl font-bold text-gray-800 mb-4">In Progress Projects</h3>
+                <div className="bg-white border border-breeze-200 rounded-lg p-6">
+                  <h3 className="text-xl font-bold text-breeze-800 mb-4">In Progress Projects</h3>
                   <div className="space-y-4">
                     {reportData.upcomingProjects.map((project: any, index: number) => {
                       const formatted = formatProjectForReport(project)
                       const isSelected = selectedProjects.has(project.idReadable)
                       return (
-                        <div key={project.idReadable} className="border-b border-gray-100 pb-4 last:border-b-0">
+                        <div key={project.idReadable} className="border-b border-breeze-100 pb-4 last:border-b-0">
                           <div className="flex items-start space-x-3 mb-2">
                             <input
                               type="checkbox"
                               checked={isSelected}
                               onChange={() => toggleProjectSelection(project.idReadable)}
-                              className="mt-1 h-4 w-4 text-breeze-600 focus:ring-breeze-500 border-gray-300 rounded cursor-pointer"
+                              className="mt-1 h-4 w-4 text-ocean-600 focus:ring-ocean-500 border-breeze-300 rounded cursor-pointer"
                             />
                             <div className="flex-1">
                               <div className="flex items-start justify-between">
-                                <h4 className="font-semibold text-gray-800">{formatted.name}</h4>
-                                <div className="flex items-center space-x-2 text-sm text-gray-500">
+                                <h4 className="font-semibold text-breeze-800">{formatted.name}</h4>
+                                <div className="flex items-center space-x-2 text-sm text-breeze-500">
                                   <span>Initiative: {formatted.initiative}</span>
                                   <span>•</span>
                                   <span>Ticket: <a 
                                     href={`https://realbrokerage.youtrack.cloud/issue/${formatted.ticket}`}
                                     target="_blank"
                                     rel="noopener noreferrer"
-                                    className="text-breeze-600 hover:text-breeze-700 underline"
+                                    className="text-ocean-600 hover:text-ocean-700 underline"
                                   >{formatted.ticket}</a></span>
                                 </div>
                               </div>
-                              <p className="text-gray-600 mb-3">{formatted.description}</p>
+                              <p className="text-breeze-600 mb-3">{formatted.description}</p>
                               {formatted.timeSavings > 0 && (
                                 <div className="flex items-center space-x-6 text-sm">
                                   <div className="flex items-center space-x-1">
-                                    <span className="text-gray-500">Time Savings:</span>
-                                    <span className="font-semibold text-green-600">{formatted.timeSavings.toFixed(0)} hrs</span>
+                                    <span className="text-breeze-500">Time Savings:</span>
+                                    <span className="font-semibold text-status-done">{formatted.timeSavings.toFixed(0)} hrs</span>
                                   </div>
                                   <div className="flex items-center space-x-1">
-                                    <span className="text-gray-500">Cost Impact:</span>
-                                    <span className="font-semibold text-orange-600">${formatted.costImpact.toLocaleString()}</span>
+                                    <span className="text-breeze-500">Cost Impact:</span>
+                                    <span className="font-semibold text-priority-medium">${formatted.costImpact.toLocaleString()}</span>
                                   </div>
                                 </div>
                               )}
@@ -803,7 +803,7 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
           {/* Header */}
           <div className="mb-8">
             <div className="flex items-center space-x-3 mb-4">
-              <div className="p-3 bg-gradient-to-br from-blue-400 to-blue-600 rounded-xl shadow-lg">
+              <div className="p-3 bg-gradient-to-br from-ocean-400 to-ocean-600 rounded-xl shadow-lg">
                 <Plus className="w-6 h-6 text-white" />
               </div>
               <div>
@@ -820,23 +820,23 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
             <form onSubmit={handleCreateAutomation} className="space-y-6">
               {/* Success Message */}
               {createdAutomationId && (
-                <div className="p-6 bg-green-500/30 border-2 border-green-400 rounded-lg">
-                  <p className="text-black text-base font-semibold mb-2">Automation created successfully!</p>
-                  <p className="text-black text-sm font-mono bg-green-900/30 p-2 rounded">ID: {createdAutomationId}</p>
+                <div className="p-6 bg-status-done/10 border-2 border-status-done/20 rounded-lg">
+                  <p className="text-status-done text-base font-semibold mb-2">Automation created successfully!</p>
+                  <p className="text-breeze-800 text-sm font-mono bg-status-done/10 p-2 rounded">ID: {createdAutomationId}</p>
                 </div>
               )}
 
               {/* Error Message */}
               {createError && (
-                <div className="p-4 bg-red-500/20 border border-red-500/30 rounded-lg">
-                  <p className="text-red-300 text-sm">{createError}</p>
+                <div className="p-4 bg-priority-high/10 border border-priority-high/20 rounded-lg">
+                  <p className="text-priority-high text-sm">{createError}</p>
                 </div>
               )}
 
               {/* Name Field */}
               <div>
                 <label htmlFor="automation-name" className="block text-sm font-medium text-breeze-700 mb-2">
-                  Name <span className="text-red-500">*</span>
+                  Name <span className="text-priority-high">*</span>
                 </label>
                 <input
                   id="automation-name"
@@ -844,7 +844,7 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
                   value={automationName}
                   onChange={(e) => setAutomationName(e.target.value)}
                   placeholder="Enter automation name"
-                  className="w-full px-3 py-2 bg-white border border-white/20 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50"
+                  className="w-full px-3 py-2 bg-white border border-breeze-200 rounded-lg text-breeze-900 placeholder-breeze-400 focus:outline-none focus:ring-2 focus:ring-ocean-400/50 focus:border-ocean-400/50"
                   required
                 />
               </div>
@@ -860,7 +860,7 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
                   value={automationPlatform}
                   onChange={(e) => setAutomationPlatform(e.target.value)}
                   placeholder="Enter platform (optional)"
-                  className="w-full px-3 py-2 bg-white border border-white/20 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50"
+                  className="w-full px-3 py-2 bg-white border border-breeze-200 rounded-lg text-breeze-900 placeholder-breeze-400 focus:outline-none focus:ring-2 focus:ring-ocean-400/50 focus:border-ocean-400/50"
                 />
               </div>
 
@@ -875,7 +875,7 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
                   value={automationInitiative}
                   onChange={(e) => setAutomationInitiative(e.target.value)}
                   placeholder="Enter initiative (optional)"
-                  className="w-full px-3 py-2 bg-white border border-white/20 rounded-lg text-black placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-blue-400/50 focus:border-blue-400/50"
+                  className="w-full px-3 py-2 bg-white border border-breeze-200 rounded-lg text-breeze-900 placeholder-breeze-400 focus:outline-none focus:ring-2 focus:ring-ocean-400/50 focus:border-ocean-400/50"
                 />
               </div>
 
@@ -914,13 +914,13 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
           {tools.map((tool) => (
             <div key={tool.id} className="card hover:bg-white/[0.08] transition-colors">
               <div className="flex items-start justify-between mb-4">
-                <div className="p-3 bg-gradient-to-br from-purple-400 to-purple-600 rounded-xl">
+                <div className="p-3 bg-gradient-to-br from-ocean-400 to-ocean-600 rounded-xl shadow-md">
                   {tool.icon}
                 </div>
-                <span className={`px-2 py-1 text-xs rounded-full ${
+                <span className={`px-2 py-1 text-xs font-medium rounded-full ${
                   tool.status === 'available' 
-                    ? 'bg-green-500/20 text-green-700' 
-                    : 'bg-yellow-500/20 text-yellow-700'
+                    ? 'bg-status-done/10 text-status-done border border-status-done/20' 
+                    : 'bg-priority-medium/10 text-priority-medium border border-priority-medium/20'
                 }`}>
                   {tool.status === 'available' ? 'Available' : 'Coming Soon'}
                 </span>
@@ -929,20 +929,20 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
               <div className="mb-4">
                 <h3 className="font-semibold text-breeze-800 mb-2">{tool.name}</h3>
                 <p className="text-sm text-breeze-600 mb-3">{tool.description}</p>
-                <span className="text-xs text-accent-300 font-medium">{tool.category}</span>
+                <span className="text-xs text-accent-500 font-semibold uppercase tracking-wider">{tool.category}</span>
               </div>
 
               <div className="flex items-center justify-between">
                 {tool.status === 'available' ? (
                   <button
                     onClick={tool.action}
-                    className="flex items-center space-x-2 text-purple-700 hover:text-purple-600 transition-colors"
+                    className="flex items-center space-x-2 text-ocean-600 hover:text-ocean-700 font-medium transition-colors"
                   >
                     <span>Open Tool</span>
                     <ChevronRight className="w-4 h-4" />
                   </button>
                 ) : (
-                  <span className="text-breeze-500 text-sm">Coming Soon</span>
+                  <span className="text-breeze-400 text-sm italic">Coming Soon</span>
                 )}
                 
                 {tool.href && (

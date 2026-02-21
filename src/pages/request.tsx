@@ -480,7 +480,7 @@ function RequestPageContent() {
                                   <button
                                     type="button"
                                     onClick={() => saveLink(index)}
-                                    className="px-3 py-1 bg-green-500 hover:bg-green-600 text-white text-sm font-medium rounded-lg flex items-center space-x-1 transition-colors"
+                                    className="px-3 py-1 bg-status-done hover:bg-priority-low text-white text-sm font-medium rounded-lg flex items-center space-x-1 transition-colors"
                                     disabled={!tempLinkData.name.trim() || !tempLinkData.url.trim()}
                                   >
                                     <Check className="w-4 h-4" />
@@ -489,7 +489,7 @@ function RequestPageContent() {
                                   <button
                                     type="button"
                                     onClick={() => cancelEditLink(index)}
-                                    className="px-3 py-1 bg-gray-500 hover:bg-gray-600 text-white text-sm font-medium rounded-lg flex items-center space-x-1 transition-colors"
+                                    className="px-3 py-1 bg-breeze-500 hover:bg-breeze-600 text-white text-sm font-medium rounded-lg flex items-center space-x-1 transition-colors"
                                   >
                                     <X className="w-4 h-4" />
                                     <span>Cancel</span>
@@ -500,14 +500,14 @@ function RequestPageContent() {
                                   <button
                                     type="button"
                                     onClick={() => startEditLink(index)}
-                                    className="text-ocean-400 hover:text-ocean-300 text-sm"
+                                    className="text-ocean-500 hover:text-ocean-600 text-sm"
                                   >
                                     Edit
                                   </button>
                                   <button
                                     type="button"
                                     onClick={() => removeLink(index)}
-                                    className="text-red-400 hover:text-red-300 text-sm"
+                                    className="text-priority-high hover:text-priority-urgent text-sm"
                                   >
                                     Remove
                                   </button>
@@ -675,7 +675,7 @@ function RequestPageContent() {
                 <button
                   onClick={handleSubmitAnyway}
                   disabled={isSubmitting}
-                  className="flex-1 px-4 py-2 bg-gray-300 hover:bg-gray-400 text-gray-700 font-medium rounded-lg transition-colors disabled:opacity-50"
+                  className="flex-1 px-4 py-2 bg-breeze-200 hover:bg-breeze-300 text-breeze-700 font-medium rounded-lg transition-colors disabled:opacity-50"
                 >
                   {isSubmitting ? 'Submitting...' : 'Submit Anyway'}
                 </button>

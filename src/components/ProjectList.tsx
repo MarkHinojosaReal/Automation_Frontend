@@ -284,7 +284,7 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
                   {activeFilterCount > 0 && (
                     <button
                       onClick={clearFilters}
-                      className="px-3 py-1.5 bg-red-500/20 hover:bg-red-500/30 text-red-700 rounded text-xs font-medium transition-colors flex items-center space-x-1.5"
+                      className="px-3 py-1.5 bg-priority-high/10 hover:bg-priority-high/20 text-priority-high rounded text-xs font-medium transition-colors flex items-center space-x-1.5"
                     >
                       <X className="w-3 h-3" />
                       <span>Clear Filters</span>
@@ -299,7 +299,7 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
                         onClick={() => setStateFilterMode("include")}
                         className={`px-2 py-1 rounded text-xs font-medium transition-all ${
                           stateFilterMode === "include"
-                            ? "bg-green-500 text-white"
+                            ? "bg-status-done text-white"
                             : "bg-white/60 text-breeze-600 hover:bg-white/80"
                         }`}
                       >
@@ -309,7 +309,7 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
                         onClick={() => setStateFilterMode("exclude")}
                         className={`px-2 py-1 rounded text-xs font-medium transition-all ${
                           stateFilterMode === "exclude"
-                            ? "bg-red-500 text-white"
+                            ? "bg-priority-high text-white"
                             : "bg-white/60 text-breeze-600 hover:bg-white/80"
                         }`}
                       >
@@ -360,7 +360,7 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
                         onClick={() => setPriorityFilterMode("include")}
                         className={`px-2 py-1 rounded text-xs font-medium transition-all ${
                           priorityFilterMode === "include"
-                            ? "bg-green-500 text-white"
+                            ? "bg-status-done text-white"
                             : "bg-white/60 text-breeze-600 hover:bg-white/80"
                         }`}
                       >
@@ -370,7 +370,7 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
                         onClick={() => setPriorityFilterMode("exclude")}
                         className={`px-2 py-1 rounded text-xs font-medium transition-all ${
                           priorityFilterMode === "exclude"
-                            ? "bg-red-500 text-white"
+                            ? "bg-priority-high text-white"
                             : "bg-white/60 text-breeze-600 hover:bg-white/80"
                         }`}
                       >
@@ -421,7 +421,7 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
                         onClick={() => setRequestorFilterMode("include")}
                         className={`px-2 py-1 rounded text-xs font-medium transition-all ${
                           requestorFilterMode === "include"
-                            ? "bg-green-500 text-white"
+                            ? "bg-status-done text-white"
                             : "bg-white/60 text-breeze-600 hover:bg-white/80"
                         }`}
                       >
@@ -431,7 +431,7 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
                         onClick={() => setRequestorFilterMode("exclude")}
                         className={`px-2 py-1 rounded text-xs font-medium transition-all ${
                           requestorFilterMode === "exclude"
-                            ? "bg-red-500 text-white"
+                            ? "bg-priority-high text-white"
                             : "bg-white/60 text-breeze-600 hover:bg-white/80"
                         }`}
                       >
@@ -482,7 +482,7 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
                         onClick={() => setAssigneeFilterMode("include")}
                         className={`px-2 py-1 rounded text-xs font-medium transition-all ${
                           assigneeFilterMode === "include"
-                            ? "bg-green-500 text-white"
+                            ? "bg-status-done text-white"
                             : "bg-white/60 text-breeze-600 hover:bg-white/80"
                         }`}
                       >
@@ -492,7 +492,7 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
                         onClick={() => setAssigneeFilterMode("exclude")}
                         className={`px-2 py-1 rounded text-xs font-medium transition-all ${
                           assigneeFilterMode === "exclude"
-                            ? "bg-red-500 text-white"
+                            ? "bg-priority-high text-white"
                             : "bg-white/60 text-breeze-600 hover:bg-white/80"
                         }`}
                       >
@@ -555,7 +555,7 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
                             onClick={() => setInitiativeFilterMode("include")}
                             className={`px-2 py-1 rounded text-xs font-medium transition-all ${
                               initiativeFilterMode === "include"
-                                ? "bg-green-500 text-white"
+                                ? "bg-status-done text-white"
                                 : "bg-white/60 text-breeze-600 hover:bg-white/80"
                             }`}
                           >
@@ -565,7 +565,7 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
                             onClick={() => setInitiativeFilterMode("exclude")}
                             className={`px-2 py-1 rounded text-xs font-medium transition-all ${
                               initiativeFilterMode === "exclude"
-                                ? "bg-red-500 text-white"
+                                ? "bg-priority-high text-white"
                                 : "bg-white/60 text-breeze-600 hover:bg-white/80"
                             }`}
                           >

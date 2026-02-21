@@ -147,7 +147,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
             {/* Logout Button */}
             <button
               onClick={handleLogout}
-              className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-red-500/20 hover:bg-red-500/30 text-red-300 hover:text-red-200 rounded-lg transition-colors"
+              className="w-full flex items-center justify-center space-x-2 px-4 py-2 bg-priority-high/10 hover:bg-priority-high/20 text-priority-high hover:text-priority-urgent rounded-lg transition-colors"
             >
               <LogOut className="w-4 h-4" />
               <span className="text-sm font-medium">Logout</span>

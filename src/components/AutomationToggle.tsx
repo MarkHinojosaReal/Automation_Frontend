@@ -55,10 +55,10 @@ export const AutomationToggle: React.FC<AutomationToggleProps> = ({
       <div className="bg-white rounded-lg border border-breeze-200 p-6 hover:shadow-md transition-shadow">
         <div className="flex items-center justify-between">
           <div className="flex-1">
-            <h3 className="text-base font-semibold text-gray-900">{name}</h3>
+            <h3 className="text-base font-semibold text-breeze-900">{name}</h3>
             <div className="flex gap-2 mt-1">
               {platform && (
-                <span className="text-xs text-gray-500 bg-gray-100 px-2 py-0.5 rounded">
+                <span className="text-xs text-breeze-600 bg-breeze-50 px-2 py-0.5 rounded">
                   {platform}
                 </span>
               )}
@@ -76,8 +76,8 @@ export const AutomationToggle: React.FC<AutomationToggleProps> = ({
           className={`
             relative inline-flex h-6 w-11 items-center rounded-full
             transition-colors duration-200 ease-in-out
-            focus:outline-none focus:ring-2 focus:ring-breeze-500 focus:ring-offset-2
-            ${isActive ? 'bg-breeze-600' : 'bg-gray-200'}
+            focus:outline-none focus:ring-2 focus:ring-ocean-500 focus:ring-offset-2
+            ${isActive ? 'bg-ocean-500' : 'bg-breeze-200'}
             ${isUpdating ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer'}
           `}
           aria-label={`Toggle ${name}`}
@@ -93,12 +93,12 @@ export const AutomationToggle: React.FC<AutomationToggleProps> = ({
         </button>
       </div>
       
-        <div className="mt-4 flex items-center justify-between text-xs text-gray-500">
-          <span className={`font-medium ${isActive ? 'text-green-600' : 'text-gray-400'}`}>
+        <div className="mt-4 flex items-center justify-between text-xs text-breeze-500">
+          <span className={`font-medium ${isActive ? 'text-status-done' : 'text-breeze-400'}`}>
             {isActive ? '✓ Active' : '○ Inactive'}
           </span>
           {isUpdating && (
-            <span className="text-breeze-600 animate-pulse">Updating...</span>
+            <span className="text-ocean-600 animate-pulse">Updating...</span>
           )}
         </div>
       </div>

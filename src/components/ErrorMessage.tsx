@@ -11,11 +11,11 @@ export function ErrorMessage({ message, onRetry, showRetry = true }: ErrorMessag
   return (
     <div className="flex flex-col items-center justify-center py-12 space-y-6">
       <div className="relative">
-        <div className="flex items-center space-x-3 text-red-400">
+        <div className="flex items-center space-x-3 text-priority-high">
           <AlertCircle className="w-6 h-6" />
           <span className="font-semibold text-lg">Error</span>
         </div>
-        <div className="absolute inset-0 bg-red-400/20 rounded-full blur-xl" />
+        <div className="absolute inset-0 bg-priority-high/20 rounded-full blur-xl" />
       </div>
       
       <p className="text-breeze-600 text-center max-w-md font-medium">{message}</p>

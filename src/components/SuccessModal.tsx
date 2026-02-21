@@ -35,10 +35,10 @@ export function SuccessModal({ isOpen, onClose, ticketNumber }: SuccessModalProp
 
           {/* Success Icon */}
           <div className="relative mb-6">
-            <div className="w-16 h-16 mx-auto bg-gradient-to-br from-emerald-400 to-green-500 rounded-full flex items-center justify-center shadow-lg">
+            <div className="w-16 h-16 mx-auto bg-gradient-to-br from-status-done/80 to-status-done rounded-full flex items-center justify-center shadow-lg">
               <CheckCircle2 className="w-8 h-8 text-white" />
             </div>
-            <div className="absolute inset-0 bg-emerald-400/20 rounded-full blur-xl animate-pulse" />
+            <div className="absolute inset-0 bg-status-done/20 rounded-full blur-xl animate-pulse" />
           </div>
 
           {/* Header */}

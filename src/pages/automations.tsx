@@ -50,11 +50,11 @@ function AutomationsPageContent() {
     return (
       <Layout title="Access Denied">
         <div className="text-center py-12">
-          <h2 className="text-2xl font-bold text-gray-900 mb-4">Access Denied</h2>
-          <p className="text-gray-600 mb-8">You need admin privileges to access this page.</p>
+          <h2 className="text-2xl font-bold text-breeze-900 mb-4">Access Denied</h2>
+          <p className="text-breeze-600 mb-8">You need admin privileges to access this page.</p>
           <button
             onClick={() => navigate('/')}
-            className="px-6 py-2 bg-breeze-600 text-white rounded-lg hover:bg-breeze-700"
+            className="px-6 py-2 bg-ocean-500 text-white rounded-lg hover:bg-ocean-600"
           >
             Go Home
           </button>
@@ -79,8 +79,8 @@ function AutomationsPageContent() {
       <div className="mb-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Control Panel</h1>
-            <p className="text-gray-600 mt-2">
+            <h1 className="text-2xl font-bold text-breeze-900">Control Panel</h1>
+            <p className="text-breeze-600 mt-2">
               Manage automation states. Changes take effect immediately.
             </p>
           </div>
@@ -90,22 +90,22 @@ function AutomationsPageContent() {
         </div>
         
         {updateError && (
-          <div className="mt-4 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-red-800 text-sm">{updateError}</p>
+          <div className="mt-4 p-4 bg-priority-high/10 border border-priority-high/20 rounded-lg">
+            <p className="text-priority-high text-sm">{updateError}</p>
           </div>
         )}
       </div>
 
-      <div className="mb-6 p-4 bg-yellow-50 border-l-4 border-yellow-400">
+      <div className="mb-6 p-4 bg-priority-medium/10 border-l-4 border-priority-medium rounded-lg">
         <div className="flex">
           <div className="flex-shrink-0">
-            <svg className="h-5 w-5 text-yellow-400" viewBox="0 0 20 20" fill="currentColor">
+            <svg className="h-5 w-5 text-priority-medium" viewBox="0 0 20 20" fill="currentColor">
               <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
             </svg>
           </div>
           <div className="ml-3">
-            <p className="text-sm text-yellow-700">
-              <strong>Warning:</strong> This page controls live automations. Toggle changes are immediate and will affect production systems.
+            <p className="text-sm text-priority-medium font-medium">
+              Warning: This page controls live automations. Toggle changes are immediate and will affect production systems.
             </p>
           </div>
         </div>
@@ -122,14 +122,14 @@ function AutomationsPageContent() {
             second: '2-digit'
           })}
         </p>
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-breeze-600">
           {automations.length} automation{automations.length !== 1 ? 's' : ''} total
           {' · '}
-          <span className="text-green-600 font-medium">
+          <span className="text-status-done font-medium">
             {automations.filter(a => a.is_active).length} active
           </span>
           {' · '}
-          <span className="text-gray-400 font-medium">
+          <span className="text-breeze-400 font-medium">
             {automations.filter(a => !a.is_active).length} inactive
           </span>
         </div>

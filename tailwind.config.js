@@ -49,6 +49,19 @@ module.exports = {
           dark: 'rgba(0, 0, 0, 0.1)',
           ocean: 'rgba(6, 182, 212, 0.1)',
           accent: 'rgba(242, 117, 10, 0.1)',
+        },
+        priority: {
+          low: '#10b981',
+          medium: '#f59e0b',
+          high: '#ef4444',
+          urgent: '#dc2626',
+          tbd: '#14b8a6',
+        },
+        status: {
+          todo: '#3b82f6',
+          progress: '#f59e0b',
+          done: '#10b981',
+          scoping: '#14b8a6',
         }
       },
       fontFamily: {

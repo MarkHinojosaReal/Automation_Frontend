@@ -11,7 +11,7 @@
   }
   
   body {
-    @apply text-breeze-800 bg-slate-100;
+    @apply text-breeze-800 bg-breeze-50;
     min-height: 100vh;
   }
   
@@ -59,7 +59,7 @@
   
   /* Liquid glass navigation */
   .nav-glass {
-    @apply bg-slate-200 border-b border-slate-300 shadow-sm;
+    @apply bg-breeze-200 border-b border-breeze-300 shadow-sm;
   }
   
   /* Primary button with glass effect */
@@ -137,7 +137,7 @@
   
   /* Sidebar glass effect */
   .sidebar-glass {
-    @apply backdrop-blur-lg bg-slate-900;
+    @apply backdrop-blur-lg bg-breeze-900;
   }
   
   /* Menu item hover */
