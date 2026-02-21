@@ -21,9 +21,7 @@ export function AuthGuard({ children }: AuthGuardProps) {
 
   if (!user) {
     // Use window.location.href for immediate redirect
-    if (typeof window !== 'undefined') {
-      window.location.href = '/login'
-    }
+    window.location.href = '/login'
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center">

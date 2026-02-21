@@ -25,7 +25,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     // Only check auth status if NOT on login page
-    const currentPath = typeof window !== 'undefined' ? window.location.pathname : ''
+    const currentPath = window.location.pathname
     
     if (currentPath === '/login') {
       // On login page - don't check auth, just set loading to false
@@ -39,7 +39,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Inactivity logout - 30 minutes of no activity
   useEffect(() => {
-    if (!user || typeof window === 'undefined') return
+    if (!user) return
 
     const INACTIVITY_TIMEOUT = 30 * 60 * 1000 // 30 minutes in milliseconds
     let inactivityTimer: NodeJS.Timeout
@@ -81,10 +81,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const checkAuthStatus = async () => {
     try {
-      // In development, use the proxy server
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:3001/api/auth/me'
-        : '/api/auth/me'
+      const apiUrl = '/api/auth/me'
         
       const response = await fetch(apiUrl, {
         credentials: 'include'
@@ -118,10 +115,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = async () => {
     try {
-      // In development, use the proxy server
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:3001/api/auth/logout'
-        : '/api/auth/logout'
+      const apiUrl = '/api/auth/logout'
         
       await fetch(apiUrl, {
         method: 'POST',

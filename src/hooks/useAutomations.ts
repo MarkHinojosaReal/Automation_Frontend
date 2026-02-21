@@ -16,9 +16,7 @@ export function useAutomations(pollingInterval: number = 5000): UseAutomationsRe
 
   const fetchAutomations = useCallback(async () => {
     try {
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:3001/api/automations'
-        : '/api/automations'
+      const apiUrl = '/api/automations'
         
       const response = await fetch(apiUrl, {
         credentials: 'include'
@@ -43,9 +41,7 @@ export function useAutomations(pollingInterval: number = 5000): UseAutomationsRe
 
   const updateAutomation = useCallback(async (id: string, isActive: boolean) => {
     try {
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? `http://localhost:3001/api/automations/${id}`
-        : `/api/automations/${id}`
+      const apiUrl = `/api/automations/${id}`
         
       const response = await fetch(apiUrl, {
         method: 'PUT',

@@ -10,7 +10,7 @@
     "forceConsistentCasingInFileNames": true,
     "noFallthroughCasesInSwitch": true,
     "module": "ESNext",
-    "moduleResolution": "Node",
+    "moduleResolution": "Bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
     "noEmit": true,
@@ -18,18 +18,15 @@
     "baseUrl": ".",
     "paths": {
       "@/*": ["./src/*"]
-    }
+    },
+    "types": ["vite/client"]
   },
   "include": [
     "src/**/*",
-    "gatsby-config.ts",
-    "gatsby-node.ts",
-    "gatsby-browser.ts",
-    "gatsby-ssr.ts"
+    "vite.config.ts"
   ],
   "exclude": [
     "node_modules",
-    "public",
-    ".cache"
+    "dist"
   ]
 }

@@ -57,10 +57,7 @@ export default function LoginPage() {
   const handleCredentialResponse = (response: any) => {
     const idToken = response.credential
     
-    // In development, use the proxy server
-    const apiUrl = process.env.NODE_ENV === 'development' 
-      ? 'http://localhost:3001/api/auth/google'
-      : '/api/auth/google'
+    const apiUrl = '/api/auth/google'
     
     fetch(apiUrl, {
       method: 'POST',

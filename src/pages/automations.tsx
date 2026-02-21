@@ -6,7 +6,7 @@ import { ErrorMessage } from "../components/ErrorMessage"
 import { AutomationToggle } from "../components/AutomationToggle"
 import { useAutomations } from "../hooks/useAutomations"
 import { useAuth } from "../contexts/AuthContext"
-import { navigate } from "gatsby"
+import { useNavigate } from "react-router-dom"
 
 function AutomationsPage() {
   return (
@@ -18,6 +18,7 @@ function AutomationsPage() {
 
 function AutomationsPageContent() {
   const { isAdmin } = useAuth()
+  const navigate = useNavigate()
   const { automations, loading, error, refetch, updateAutomation } = useAutomations(60000) // Poll every 1 minute
   const [updateError, setUpdateError] = useState<string | null>(null)
 
@@ -159,12 +160,4 @@ function AutomationsPageContent() {
 
 export default AutomationsPage
 
-export function Head() {
-  return (
-    <>
-      <title>Control Panel</title>
-      <meta name="description" content="Manage and monitor automation states" />
-    </>
-  )
-}
 

@@ -1,5 +1,5 @@
 import React from "react"
-import { Link } from "gatsby"
+import { Link } from "react-router-dom"
 import { Layout } from "../components/Layout"
 import { Home, ArrowLeft } from "lucide-react"
 
@@ -38,11 +38,3 @@ function NotFoundPage() {
 
 export default NotFoundPage
 
-export function Head() {
-  return (
-    <>
-      <title>404 - Page Not Found</title>
-      <meta name="description" content="Page not found" />
-    </>
-  )
-}

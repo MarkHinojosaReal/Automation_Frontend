@@ -16,7 +16,7 @@ export function SimpleProjectCard({ project }: SimpleProjectCardProps) {
   }
 
   const getYouTrackUrl = (idReadable: string) => {
-    const youtrackBase = process.env.GATSBY_YOUTRACK_BASE_URL || 'https://realbrokerage.youtrack.cloud'
+    const youtrackBase = import.meta.env.VITE_YOUTRACK_BASE_URL || 'https://realbrokerage.youtrack.cloud'
     return `${youtrackBase}/issue/${idReadable}`
   }
 

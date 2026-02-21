@@ -42,8 +42,8 @@ async function countDoneAutomationTasks() {
       console.log('📋 Task details:')
       response.data.forEach((task, index) => {
         console.log(`${index + 1}. ${task.idReadable}: ${task.summary}`)
-        console.log(`   State: ${task.state.name}`)
-        console.log(`   Tags: ${task.tags?.map(tag => tag.name).join(', ') || 'None'}`)
+        console.log(`   State: ${task.state?.name}`)
+        console.log(`   Tags: ${(task as any).tags?.map((tag: any) => tag.name).join(', ') || 'None'}`)
       })
       return response.data.length
     } else {
@@ -57,7 +57,5 @@ async function countDoneAutomationTasks() {
 }
 
 // Test functions that can be called from browser console
-if (typeof window !== 'undefined') {
-  (window as any).testYouTrack = testYouTrackConnection
-  (window as any).countDoneAutomationTasks = countDoneAutomationTasks
-}
+;(window as any).testYouTrack = testYouTrackConnection
+;(window as any).countDoneAutomationTasks = countDoneAutomationTasks

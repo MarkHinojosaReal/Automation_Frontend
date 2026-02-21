@@ -1,5 +1,5 @@
 import React, { useMemo } from "react"
-import { Link } from "gatsby"
+import { Link, useLocation } from "react-router-dom"
 import { 
   Home, 
   Folder,
@@ -46,7 +46,7 @@ interface SidebarProps {
 }
 
 export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
-  const currentPath = typeof window !== "undefined" ? window.location.pathname : "/"
+  const { pathname: currentPath } = useLocation()
   const { user, logout } = useAuth()
   
   const handleLogout = async () => {

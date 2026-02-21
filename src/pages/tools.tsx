@@ -2,7 +2,7 @@ import React, { useState, useEffect } from "react"
 import { Layout } from "../components/Layout"
 import { AuthGuard } from "../components/AuthGuard"
 import { ProtectedRoute } from "../components/ProtectedRoute"
-import { Link } from "gatsby"
+import { Link } from "react-router-dom"
 import { 
   Search,
   Copy,
@@ -92,10 +92,7 @@ function ToolsPageContent() {
     setInspectorResult(null)
 
     try {
-      // Use proxy server in development, direct API in production
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:3001/api/metabase/inspect'
-        : '/api/metabase/inspect'
+      const apiUrl = '/api/metabase/inspect'
       
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -266,9 +263,7 @@ function ToolsPageContent() {
     setCreatedAutomationId(null)
 
     try {
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:3001/api/automations'
-        : '/api/automations'
+      const apiUrl = '/api/automations'
         
       const response = await fetch(apiUrl, {
         method: 'POST',
@@ -981,11 +976,3 @@ function ToolsPage() {
 
 export default ToolsPage
 
-export function Head() {
-  return (
-    <>
-      <title>Tools Directory - YouTrack</title>
-      <meta name="description" content="Directory of automation tools and utilities for data analysis and workflow optimization" />
-    </>
-  )
-}

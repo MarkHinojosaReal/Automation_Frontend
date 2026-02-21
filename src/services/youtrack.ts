@@ -40,11 +40,7 @@ class YouTrackService {
 
   constructor() {
     this.config = {
-      proxyUrl: process.env.GATSBY_PROXY_URL || (
-        process.env.NODE_ENV === 'development' 
-          ? 'http://localhost:3001'
-          : (typeof window !== 'undefined' ? window.location.origin : '')
-      ),
+      proxyUrl: import.meta.env.VITE_PROXY_URL || window.location.origin,
       useProxy: true // Always use proxy in this setup
     }
   }
@@ -62,7 +58,7 @@ class YouTrackService {
         }
       } else {
         // Direct API call (for production with proper CORS setup)
-        const youtrackBase = process.env.GATSBY_YOUTRACK_BASE_URL || 'https://realbrokerage.youtrack.cloud'
+        const youtrackBase = import.meta.env.VITE_YOUTRACK_BASE_URL || 'https://realbrokerage.youtrack.cloud'
         url = `${youtrackBase}/api${endpoint}`
         if (params) {
           const searchParams = new URLSearchParams(params)
@@ -80,7 +76,7 @@ class YouTrackService {
 
       // Only add auth header for direct API calls
       if (!this.config.useProxy) {
-        const token = process.env.GATSBY_YOUTRACK_TOKEN || 'perm-T3Bz.NTktMTYx.pbpLPTlaXss6AQjl0F1tXn7q4Cl4a8'
+        const token = import.meta.env.VITE_YOUTRACK_TOKEN || 'perm-T3Bz.NTktMTYx.pbpLPTlaXss6AQjl0F1tXn7q4Cl4a8'
         headers['Authorization'] = `Bearer ${token}`
       }
 
@@ -117,7 +113,7 @@ class YouTrackService {
   }
 
   async getCurrentSprintIssues(): Promise<YouTrackApiResponse> {
-    const agileId = process.env.GATSBY_YOUTRACK_AGILE_ID || '124-333'
+    const agileId = import.meta.env.VITE_YOUTRACK_AGILE_ID || '124-333'
     const fields = 'idReadable,summary,description,created,updated,reporter(name,email),assignee(name,email),customFields(name,value(name)),state(name)'
     
     if (this.config.useProxy) {

@@ -67,10 +67,7 @@ function MetricsPageContent() {
     setError(null)
     
     try {
-      // Use proxy server in development, direct API in production
-      const apiUrl = process.env.NODE_ENV === 'development' 
-        ? 'http://localhost:3001/api/metrics'
-        : '/api/metrics'
+      const apiUrl = '/api/metrics'
       
       const response = await fetch(apiUrl)
       if (!response.ok) {
@@ -448,11 +445,3 @@ function MetricsPage() {
 
 export default MetricsPage
 
-export function Head() {
-  return (
-    <>
-      <title>Automation Metrics - YouTrack</title>
-      <meta name="description" content="Analytics and performance metrics for automation executions" />
-    </>
-  )
-}

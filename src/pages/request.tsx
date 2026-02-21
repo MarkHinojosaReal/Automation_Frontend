@@ -698,11 +698,3 @@ function RequestPage() {
 
 export default RequestPage
 
-export function Head() {
-  return (
-    <>
-      <title>Request Automation - YouTrack</title>
-      <meta name="description" content="Submit a new automation request" />
-    </>
-  )
-}

@@ -1,6 +1,6 @@
 import React from 'react'
 import { useAuth } from '../contexts/AuthContext'
-import { navigate } from 'gatsby'
+import { useNavigate } from 'react-router-dom'
 
 interface ProtectedRouteProps {
   children: React.ReactNode
@@ -9,6 +9,7 @@ interface ProtectedRouteProps {
 
 export function ProtectedRoute({ children, requiredPath }: ProtectedRouteProps) {
   const { user, loading, hasAccess } = useAuth()
+  const navigate = useNavigate()
 
   // Show loading state
   if (loading) {
@@ -25,9 +26,7 @@ export function ProtectedRoute({ children, requiredPath }: ProtectedRouteProps) 
   // Check if user has access to the required path
   if (requiredPath && user && !hasAccess(requiredPath)) {
     // Redirect to projects page if user doesn't have access
-    if (typeof window !== 'undefined') {
-      navigate('/projects')
-    }
+    navigate('/projects')
     return (
       <div className="min-h-screen bg-gray-100 flex items-center justify-center">
         <div className="text-center bg-white p-8 rounded-xl shadow-md max-w-md">

@@ -65,11 +65,3 @@ function ProjectsPageContent() {
 
 export default ProjectsPage
 
-export function Head() {
-  return (
-    <>
-      <title>Projects - YouTrack</title>
-      <meta name="description" content="Project overview and management" />
-    </>
-  )
-}

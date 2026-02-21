@@ -202,11 +202,3 @@ function IndexPageContent() {
 
 export default IndexPage
 
-export function Head() {
-  return (
-    <>
-      <title>Home - YouTrack</title>
-      <meta name="description" content="YouTrack project management home" />
-    </>
-  )
-}

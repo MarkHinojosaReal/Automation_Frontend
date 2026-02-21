@@ -1,5 +1,5 @@
 import React, { useState } from "react"
-import { Link } from "gatsby"
+import { Link } from "react-router-dom"
 import ReactMarkdown from "react-markdown"
 import { Calendar, User, Tag, ChevronDown, ChevronUp, Users, Clock, DollarSign, Edit3, Save, X, Loader2 } from "lucide-react"
 import type { Ticket } from "../types"
@@ -35,7 +35,7 @@ export function ProjectCard({ project, compact = false }: ProjectCardProps) {
   }
 
   const getYouTrackUrl = (idReadable: string) => {
-    const youtrackBase = process.env.GATSBY_YOUTRACK_BASE_URL || 'https://realbrokerage.youtrack.cloud'
+    const youtrackBase = import.meta.env.VITE_YOUTRACK_BASE_URL || 'https://realbrokerage.youtrack.cloud'
     return `${youtrackBase}/issue/${idReadable}`
   }
 

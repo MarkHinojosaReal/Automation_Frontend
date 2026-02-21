@@ -453,20 +453,20 @@ app.get('/api/metrics', async (req, res) => {
   }
 });
 
-// Serve static files from the public directory built by Gatsby
-// Note: Gatsby builds to /opt/render/project/src/public
+// Serve static files from the dist directory built by Vite
+// Note: Vite builds to /opt/render/project/src/dist
 // Server is at /opt/render/project/src/server/production-server.js
-// So we go up one level: server/ -> src/, then access public/
-const publicDir = path.join(__dirname, '../public');
+// So we go up one level: server/ -> src/, then access dist/
+const publicDir = path.join(__dirname, '../dist');
 app.use(express.static(publicDir, {
   index: false // Don't serve index.html automatically, we'll handle routing
 }));
 
-// Serve login page without auth (Gatsby builds this to login/index.html)
+// Serve login page without auth (SPA - single index.html handles all routes)
 app.get('/login', (req, res) => {
-  const loginPath = path.join(publicDir, 'login', 'index.html');
-  console.log(`📄 Serving login page from: ${loginPath}`);
-  res.sendFile(loginPath);
+  const indexPath = path.join(publicDir, 'index.html');
+  console.log(`📄 Serving login page from: ${indexPath}`);
+  res.sendFile(indexPath);
 });
 
 // Middleware to check authentication for all other routes (HTML pages only)
@@ -518,22 +518,19 @@ app.use((err, _req, res, _next) => {
 // Start server
 app.listen(PORT, () => {
   const fs = require('fs');
-  const loginPath = path.join(publicDir, 'login', 'index.html');
   const indexPath = path.join(publicDir, 'index.html');
-  
+
   console.log(`🌟 Production Server running on port ${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/health`);
   console.log(`🔗 YouTrack Base: ${YOUTRACK_BASE_URL}`);
-  console.log(`🏠 Public directory: ${publicDir}`);
-  console.log(`📁 Public dir exists: ${fs.existsSync(publicDir)}`);
-  
+  console.log(`🏠 Dist directory: ${publicDir}`);
+  console.log(`📁 Dist dir exists: ${fs.existsSync(publicDir)}`);
+
   if (fs.existsSync(publicDir)) {
     const files = fs.readdirSync(publicDir);
-    console.log(`📂 Files in public/: ${files.slice(0, 10).join(', ')}${files.length > 10 ? '...' : ''}`);
+    console.log(`📂 Files in dist/: ${files.slice(0, 10).join(', ')}${files.length > 10 ? '...' : ''}`);
   }
-  
-  console.log(`🔐 Login page path: ${loginPath}`);
-  console.log(`📄 Login page exists: ${fs.existsSync(loginPath)}`);
+
   console.log(`📄 Index page exists: ${fs.existsSync(indexPath)}`);
   console.log(`🔒 Auth middleware enabled for all routes except /login and /api/auth`);
 });
