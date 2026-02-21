@@ -85,14 +85,12 @@ function RequestPageContent() {
             value: item.name.toLowerCase().replace(/\s+/g, '-')
           }))
           setInitiatives(initiativeOptions)
-          console.log('Loaded initiatives from YouTrack:', initiativeOptions)
         } else if (response.data && Array.isArray(response.data)) {
           const initiativeOptions = response.data.map((item: any) => ({
             name: item.name,
             value: item.name.toLowerCase().replace(/\s+/g, '-')
           }))
           setInitiatives(initiativeOptions)
-          console.log('Loaded initiatives from YouTrack (nested):', initiativeOptions)
         } else {
           // Fallback to hardcoded list if API fails
           console.warn('Failed to fetch initiatives from YouTrack, using fallback')
@@ -223,21 +221,18 @@ function RequestPageContent() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    console.log('Form submitted with data:', formData)
-    
+
     if (!validateForm()) {
-      console.log('Form validation failed:', errors)
       return
     }
-    
+
     // Check if no links are provided
     const validLinks = formData.links.filter(link => link.name.trim() && link.url.trim())
     if (validLinks.length === 0) {
       setShowNoLinksModal(true)
       return
     }
-    
-    console.log('Form validation passed, submitting...')
+
     await submitForm()
   }
 
@@ -259,7 +254,6 @@ function RequestPageContent() {
         links: formData.links.filter(link => link.name && link.url)
       }
 
-      console.log('Creating YouTrack issue:', issueData)
       const response = await youTrackService.createIssue(issueData)
       
       if (response.error) {
@@ -294,8 +288,7 @@ function RequestPageContent() {
       }
       
       setTicketNumber(newTicketNumber)
-      console.log('Ticket created successfully with ID:', newTicketNumber)
-      
+
       // Show success modal
       setShowSuccessModal(true)
       

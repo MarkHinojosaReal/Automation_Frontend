@@ -66,8 +66,6 @@ class YouTrackService {
         }
       }
       
-      console.log('Fetching from:', url)
-
       const headers: Record<string, string> = {
         'Accept': 'application/json',
         'Content-Type': 'application/json',
@@ -102,7 +100,6 @@ class YouTrackService {
       }
 
       const data = await response.json()
-      console.log('API Response:', data)
       return { data }
     } catch (error) {
       console.error('API Request failed:', error)
@@ -231,8 +228,6 @@ class YouTrackService {
         payload.description = updateData.description
       }
 
-      console.log('Updating issue with payload:', payload)
-
       let result
       if (this.config.useProxy) {
         result = await this.makeRequest(`/issues/${issueId}`, {}, 'PATCH', payload)
@@ -315,8 +310,6 @@ class YouTrackService {
 
       // Links are now handled in Supporting Documents custom field
 
-      console.log('Creating issue with payload:', payload)
-
       let result
       if (this.config.useProxy) {
         result = await this.makeRequest('/issues', {}, 'POST', payload)
@@ -327,8 +320,7 @@ class YouTrackService {
       // If ticket was created successfully, fetch the readable ID
       if (result.data && (result.data as any).id) {
         const internalId = (result.data as any).id
-        console.log('Ticket created with internal ID:', internalId)
-        
+
         // Fetch the ticket details to get the readable ID
         const ticketDetails = await this.getIssueById(internalId, ['idReadable'])
         if (ticketDetails.data && (ticketDetails.data as any).idReadable) {
@@ -337,7 +329,6 @@ class YouTrackService {
             ...(result.data as any),
             idReadable: (ticketDetails.data as any).idReadable
           } as any
-          console.log('Readable ticket ID:', (ticketDetails.data as any).idReadable)
         }
       }
 

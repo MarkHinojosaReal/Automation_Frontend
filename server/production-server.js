@@ -89,8 +89,7 @@ async function makeYouTrackRequest(endpoint, method = 'GET', body = null) {
   
   try {
     const url = `${YOUTRACK_BASE_URL}${endpoint}`;
-    console.log(`🚀 Proxying ${method} request to: ${url}`);
-    
+
     const requestOptions = {
       method,
       headers: {
@@ -103,7 +102,6 @@ async function makeYouTrackRequest(endpoint, method = 'GET', body = null) {
 
     if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
       requestOptions.body = JSON.stringify(body);
-      console.log(`📝 Request body:`, body);
     }
     
     const response = await fetch(url, requestOptions);
@@ -119,7 +117,6 @@ async function makeYouTrackRequest(endpoint, method = 'GET', body = null) {
     }
 
     const data = await response.json();
-    console.log(`✅ Successfully ${method === 'POST' ? 'created' : 'fetched'} ${Array.isArray(data) ? data.length : 'data'} items`);
     return data;
   } catch (error) {
     console.error('❌ Proxy request failed:', error.message);
@@ -175,9 +172,8 @@ app.get('/api/youtrack/issues', async (req, res) => {
 // POST endpoint for creating issues
 app.post('/api/youtrack/issues', async (req, res) => {
   try {
-    console.log('🆕 Creating new YouTrack issue');
     const endpoint = '/api/issues';
-    
+
     const data = await makeYouTrackRequest(endpoint, 'POST', req.body);
     res.json(data);
   } catch (error) {
@@ -317,9 +313,6 @@ app.all('/api/youtrack/*', async (req, res) => {
 // Metrics endpoint for automation executions
 app.get('/api/metrics', async (req, res) => {
   try {
-    console.log('📊 Fetching automation metrics from Postgres');
-    
-    // Use Render MCP to query the Postgres database
     const { Client } = require('pg');
     
     // Validate required environment variables
@@ -339,10 +332,7 @@ app.get('/api/metrics', async (req, res) => {
       }
     });
     
-    console.log(`🔗 Connecting to database: ${process.env.POSTGRES_USER}@${process.env.POSTGRES_HOST}/${process.env.POSTGRES_DATABASE}`);
-
     await client.connect();
-    console.log('✅ Connected to Postgres database');
 
     // Query 1: Get all execution data with duration calculation
     const executionsQuery = `
@@ -359,7 +349,6 @@ app.get('/api/metrics', async (req, res) => {
     
     const executionsResult = await client.query(executionsQuery);
     const executions = executionsResult.rows;
-    console.log(`📊 Found ${executions.length} execution records`);
 
     // Process the data for metrics
     const totalExecutions = executions.length;
@@ -439,9 +428,6 @@ app.get('/api/metrics', async (req, res) => {
     };
 
     await client.end();
-    console.log('✅ Database connection closed');
-    
-    console.log('📊 Successfully fetched metrics data');
     res.json(metricsData);
     
   } catch (error) {
@@ -464,9 +450,7 @@ app.use(express.static(publicDir, {
 
 // Serve login page without auth (SPA - single index.html handles all routes)
 app.get('/login', (req, res) => {
-  const indexPath = path.join(publicDir, 'index.html');
-  console.log(`📄 Serving login page from: ${indexPath}`);
-  res.sendFile(indexPath);
+  res.sendFile(path.join(publicDir, 'index.html'));
 });
 
 // Middleware to check authentication for all other routes (HTML pages only)

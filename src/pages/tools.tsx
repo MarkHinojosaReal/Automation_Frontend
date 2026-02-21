@@ -284,8 +284,7 @@ function ToolsPageContent() {
       }
 
       const data = await response.json()
-      console.log('✅ Created automation:', data)
-      
+
       setCreatedAutomationId(data.id)
       // Clear form
       setAutomationName("")

@@ -19,7 +19,6 @@ export function useYouTrackProjects(): UseYouTrackResult {
       setLoading(true)
       setError(null)
       
-      console.log('Fetching project issues...')
       const response = await youTrackService.getProjectIssues()
       
       if (response.error) {
@@ -28,10 +27,9 @@ export function useYouTrackProjects(): UseYouTrackResult {
       }
 
       if (response.data) {
-        const transformedProjects = response.data.map(issue => 
+        const transformedProjects = response.data.map(issue =>
           youTrackService.transformIssueToTicket(issue)
         )
-        console.log(`Successfully loaded ${transformedProjects.length} projects from YouTrack`)
         setTickets(transformedProjects)
       }
     } catch (err) {

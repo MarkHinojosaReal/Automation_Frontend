@@ -33,8 +33,7 @@ async function makeYouTrackRequest(endpoint, method = 'GET', body = null) {
   
   try {
     const url = `${YOUTRACK_BASE_URL}${endpoint}`;
-    console.log(`🚀 Proxying ${method} request to: ${url}`);
-    
+
     const options = {
       method,
       headers: {
@@ -47,7 +46,6 @@ async function makeYouTrackRequest(endpoint, method = 'GET', body = null) {
 
     if (body && (method === 'POST' || method === 'PUT' || method === 'PATCH')) {
       options.body = JSON.stringify(body);
-      console.log('📦 Request body:', JSON.stringify(body, null, 2));
     }
     
     const response = await fetch(url, options);
@@ -63,7 +61,6 @@ async function makeYouTrackRequest(endpoint, method = 'GET', body = null) {
     }
 
     const data = await response.json();
-    console.log(`✅ Successfully processed ${method} request`);
     return data;
   } catch (error) {
     console.error('❌ Proxy request failed:', error.message);
@@ -79,16 +76,6 @@ app.get('/health', (req, res) => {
 // Metrics endpoint for automation executions
 app.get('/api/metrics', async (req, res) => {
   try {
-    console.log('📊 Fetching automation metrics from Render Postgres');
-    
-    // Debug: Log environment variables (without showing password)
-    console.log('🔍 Environment check:');
-    console.log('  POSTGRES_HOST:', process.env.POSTGRES_HOST);
-    console.log('  POSTGRES_PORT:', process.env.POSTGRES_PORT);
-    console.log('  POSTGRES_DATABASE:', process.env.POSTGRES_DATABASE);
-    console.log('  POSTGRES_USER:', process.env.POSTGRES_USER);
-    console.log('  POSTGRES_PASSWORD:', process.env.POSTGRES_PASSWORD ? '[SET]' : '[NOT SET]');
-    
     // Connect to Postgres database using environment variables
     const { Client } = require('pg');
     
@@ -109,24 +96,9 @@ app.get('/api/metrics', async (req, res) => {
       query_timeout: 60000             // 60 second query timeout  
     };
     
-    // Debug: Log the actual configuration (without password)
-    console.log('🔧 Client config:', {
-      host: clientConfig.host,
-      port: clientConfig.port,
-      database: clientConfig.database,
-      user: clientConfig.user,
-      password: clientConfig.password ? '[HIDDEN]' : '[MISSING]',
-      ssl: clientConfig.ssl
-    });
-    
     const client = new Client(clientConfig);
-    
-    console.log(`🔗 Connecting to database: ${process.env.POSTGRES_USER}@${process.env.POSTGRES_HOST}/${process.env.POSTGRES_DATABASE}`);
 
-    // Try direct connection without wrapper first
-    console.log('🔄 Attempting direct connection...');
     await client.connect();
-    console.log('✅ Connected to Postgres database');
 
     // Query execution data with duration calculation
     const executionsQuery = `
@@ -143,7 +115,6 @@ app.get('/api/metrics', async (req, res) => {
     
     const executionsResult = await client.query(executionsQuery);
     const executions = executionsResult.rows;
-    console.log(`📊 Found ${executions.length} execution records`);
 
     // Process the data for metrics
     const totalExecutions = executions.length;
@@ -223,19 +194,12 @@ app.get('/api/metrics', async (req, res) => {
     };
 
     await client.end();
-    console.log('✅ Database connection closed');
-    
     res.json(metricsData);
-    
+
   } catch (error) {
     console.error('💥 Error in metrics endpoint:', error);
-    
-    // In development, if database connection fails, return a helpful message
-    // In production (deployed to Render), this should work fine
+
     if (error.message.includes('timeout') || error.message.includes('ETIMEDOUT')) {
-      console.log('🚨 Database connection timeout - this is expected in local development');
-      console.log('📝 The metrics page will work properly when deployed to production');
-      
       res.status(503).json({ 
         error: "Database connection timeout - this is expected in local development environment",
         message: "The metrics page will work properly when deployed to production on Render",
@@ -400,7 +364,6 @@ app.post('/api/metabase/inspect', async (req, res) => {
 // POST endpoint for creating issues
 app.post('/api/youtrack/issues', async (req, res) => {
   try {
-    console.log('🆕 Creating new YouTrack issue');
     const endpoint = '/api/issues';
     
     const data = await makeYouTrackRequest(endpoint, 'POST', req.body);
