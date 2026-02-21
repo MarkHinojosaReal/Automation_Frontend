@@ -29,7 +29,7 @@ export default function LoginPage() {
       // Initialize Google Sign-In
       if (window.google) {
         window.google.accounts.id.initialize({
-          client_id: '343351208512-9jv72o5eu0b1pqnkmrqitscufjbkk9t9.apps.googleusercontent.com',
+          client_id: import.meta.env.VITE_GOOGLE_CLIENT_ID,
           callback: handleCredentialResponse
         })
         

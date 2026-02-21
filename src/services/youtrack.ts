@@ -74,7 +74,7 @@ class YouTrackService {
 
       // Only add auth header for direct API calls
       if (!this.config.useProxy) {
-        const token = import.meta.env.VITE_YOUTRACK_TOKEN || 'perm-T3Bz.NTktMTYx.pbpLPTlaXss6AQjl0F1tXn7q4Cl4a8'
+        const token = import.meta.env.VITE_YOUTRACK_TOKEN
         headers['Authorization'] = `Bearer ${token}`
       }
 

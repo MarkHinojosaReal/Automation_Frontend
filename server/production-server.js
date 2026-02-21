@@ -234,7 +234,7 @@ app.post('/api/metabase/inspect', async (req, res) => {
 
     // Metabase API configuration
     const METABASE_BASE_URL = 'https://metabase.therealbrokerage.com';
-    const METABASE_API_KEY = 'mb_OA03ReuCiuld1BeLyMbuZo/QV60U7YBchhtGxj8xemk=';
+    const METABASE_API_KEY = process.env.METABASE_API_KEY;
     
     const fetch = (await import('node-fetch')).default;
     

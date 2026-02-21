@@ -25,7 +25,7 @@ app.use('/api/auth', authRoutes);
 
 // YouTrack configuration
 const YOUTRACK_BASE_URL = 'https://realbrokerage.youtrack.cloud';
-const YOUTRACK_TOKEN = 'perm-T3Bz.NTktMTYx.pbpLPTlaXss6AQjl0F1tXn7q4Cl4a8';
+const YOUTRACK_TOKEN = process.env.YOUTRACK_TOKEN;
 
 // Helper function to make requests to YouTrack
 async function makeYouTrackRequest(endpoint, method = 'GET', body = null) {
@@ -304,7 +304,7 @@ app.post('/api/metabase/inspect', async (req, res) => {
 
     // Metabase API configuration
     const METABASE_BASE_URL = 'https://metabase.therealbrokerage.com';
-    const METABASE_API_KEY = 'mb_OA03ReuCiuld1BeLyMbuZo/QV60U7YBchhtGxj8xemk=';
+    const METABASE_API_KEY = process.env.METABASE_API_KEY;
     
     // Make request to Metabase API
     const url = `${METABASE_BASE_URL}/api/card/${cardId}?ignore_view=true`;
