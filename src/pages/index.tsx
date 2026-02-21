@@ -8,6 +8,7 @@ import { SimpleProjectCard } from "../components/SimpleProjectCard"
 import { LoadingSpinner } from "../components/LoadingSpinner"
 import { ErrorMessage } from "../components/ErrorMessage"
 import { useYouTrackProjects } from "../hooks/useYouTrack"
+import { priorityColors, statusColors, defaultChartColor } from "../config/chart-theme"
 import "../utils/testYouTrack" // Makes testYouTrack available in browser console
 
 function IndexPage() {
@@ -47,20 +48,13 @@ function IndexPageContent() {
     
     // Define priority order: Low, Medium, High, Urgent, TBD
     const priorityOrder = ['Low', 'Medium', 'High', 'Urgent', 'TBD']
-    const priorityColors = {
-      'Low': '#10b981',
-      'Medium': '#f59e0b', 
-      'High': '#ef4444',
-      'Urgent': '#dc2626',
-      'TBD': '#14b8a6'
-    }
     
     return priorityOrder
       .filter(priority => priorityCount[priority] > 0)
       .map(priority => ({
         name: priority,
         value: priorityCount[priority],
-        color: priorityColors[priority as keyof typeof priorityColors] || '#06b6d4'
+        color: priorityColors[priority as keyof typeof priorityColors] || defaultChartColor
       }))
   }, [projects])
 
@@ -85,12 +79,6 @@ function IndexPageContent() {
     }
     
     const statusOrder = ['To Do', 'In Progress', 'Done', 'Needs Scoping']
-    const statusColors = {
-      'To Do': '#3b82f6',
-      'In Progress': '#f59e0b', 
-      'Done': '#10b981',
-      'Needs Scoping': '#14b8a6'
-    }
     
     // Group statuses by normalized names
     const normalizedStatusCount: { [key: string]: number } = {}
@@ -104,7 +92,7 @@ function IndexPageContent() {
       .map(status => ({
         name: status,
         value: normalizedStatusCount[status],
-        color: statusColors[status as keyof typeof statusColors] || '#06b6d4'
+        color: statusColors[status as keyof typeof statusColors] || defaultChartColor
       }))
   }, [projects])
 
@@ -118,7 +106,7 @@ function IndexPageContent() {
 
   // Get in-progress projects
   const inProgressProjects = useMemo(() => {
-    return projects.filter(p => p.state.name.includes('Progress')).slice(0, 10)
+    return projects.filter(p => p.state.name.includes('Progress'))
   }, [projects])
 
   if (projectsLoading) {
