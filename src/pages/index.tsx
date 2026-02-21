@@ -78,7 +78,7 @@ function IndexPageContent() {
       'Needs Scoping': 'Needs Scoping'
     }
     
-    const statusOrder = ['To Do', 'In Progress', 'Done', 'Needs Scoping']
+    const statusOrder = ['Needs Scoping', 'Discovery', 'To Do', 'In Progress', 'Done']
     
     // Group statuses by normalized names
     const normalizedStatusCount: { [key: string]: number } = {}
