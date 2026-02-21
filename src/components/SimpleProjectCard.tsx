@@ -20,7 +20,7 @@ export function SimpleProjectCard({ project }: SimpleProjectCardProps) {
     return `${youtrackBase}/issue/${idReadable}`
   }
 
-  const getPriorityColor = (priorityName: string) => {
+  const getPriorityClass = (priorityName: string) => {
     const normalizePriority = (name: string): string => {
       if (name === '0 - Urgent') return 'Urgent'
       if (name === '1 - High') return 'High'
@@ -32,37 +32,13 @@ export function SimpleProjectCard({ project }: SimpleProjectCardProps) {
     
     const normalizedPriority = normalizePriority(priorityName)
     
-    // Colors matching the bar chart exactly
     switch (normalizedPriority) {
-      case 'Low': return "text-white border-0" // #10b981
-      case 'Medium': return "text-white border-0" // #f59e0b
-      case 'High': return "text-white border-0" // #ef4444
-      case 'Urgent': return "text-white border-0" // #dc2626
-      case 'TBD': return "text-white border-0" // #14b8a6
-      default: return "text-white border-0"
-    }
-  }
-
-  const getPriorityBgColor = (priorityName: string) => {
-    const normalizePriority = (name: string): string => {
-      if (name === '0 - Urgent') return 'Urgent'
-      if (name === '1 - High') return 'High'
-      if (name === '2 - Medium') return 'Medium'
-      if (name === '3 - Low') return 'Low'
-      if (name === 'TBD') return 'TBD'
-      return name.replace(/^\d+\s*-\s*/, '')
-    }
-    
-    const normalizedPriority = normalizePriority(priorityName)
-    
-    // Exact colors from the bar chart
-    switch (normalizedPriority) {
-      case 'Low': return '#10b981'
-      case 'Medium': return '#f59e0b'
-      case 'High': return '#ef4444'
-      case 'Urgent': return '#dc2626'
-      case 'TBD': return '#14b8a6'
-      default: return '#06b6d4'
+      case 'Low': return "bg-priority-low text-white"
+      case 'Medium': return "bg-priority-medium text-white"
+      case 'High': return "bg-priority-high text-white"
+      case 'Urgent': return "bg-priority-urgent text-white"
+      case 'TBD': return "bg-priority-tbd text-white"
+      default: return "bg-ocean-500 text-white"
     }
   }
 
@@ -98,8 +74,7 @@ export function SimpleProjectCard({ project }: SimpleProjectCardProps) {
         
         {/* Priority */}
         <span 
-          className={`px-3 py-1.5 text-xs font-medium rounded ${getPriorityColor(project.priority.name)} flex-shrink-0`}
-          style={{ backgroundColor: getPriorityBgColor(project.priority.name) }}
+          className={`px-3 py-1.5 text-xs font-medium rounded ${getPriorityClass(project.priority.name)} flex-shrink-0`}
         >
           {project.priority.name.replace(/^\d+\s*-\s*/, '')}
         </span>

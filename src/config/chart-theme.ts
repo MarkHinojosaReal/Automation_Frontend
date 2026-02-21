@@ -1,19 +1,19 @@
-// Priority colors
+// Priority colors - Monochromatic Ocean Scale (Darker for visibility)
 export const priorityColors = {
-  'Low': '#10b981',      // Green
-  'Medium': '#f59e0b',   // Amber
-  'High': '#ef4444',     // Red
-  'Urgent': '#dc2626',   // Dark Red
-  'TBD': '#14b8a6',      // Teal
+  'Low': '#67e8f9',      // Ocean 300
+  'Medium': '#22d3ee',   // Ocean 400
+  'High': '#06b6d4',     // Ocean 500
+  'Urgent': '#0891b2',   // Ocean 600
+  'TBD': '#0e7490',      // Ocean 700
 };
 
-// Status colors
+// Status colors - Monochromatic Ocean Scale (Matching Priority Sequence)
 export const statusColors = {
-  'To Do': '#3b82f6',        // Blue
-  'In Progress': '#f59e0b',  // Amber
-  'Done': '#10b981',         // Green
-  'Needs Scoping': '#14b8a6', // Teal
-  'Discovery': '#8b5cf6',    // Purple
+  'To Do': '#67e8f9',        // Ocean 300 (Matches Low)
+  'In Progress': '#22d3ee',  // Ocean 400 (Matches Medium)
+  'Done': '#06b6d4',         // Ocean 500 (Matches High)
+  'Needs Scoping': '#0891b2', // Ocean 600 (Matches Urgent)
+  'Discovery': '#0e7490',    // Ocean 700 (Matches TBD)
 };
 
 // Default fallback color

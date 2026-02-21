@@ -51,17 +51,17 @@ module.exports = {
           accent: 'rgba(242, 117, 10, 0.1)',
         },
         priority: {
-          low: '#10b981',
-          medium: '#f59e0b',
-          high: '#ef4444',
-          urgent: '#dc2626',
-          tbd: '#14b8a6',
+          low: '#67e8f9',      // Ocean 300
+          medium: '#22d3ee',   // Ocean 400
+          high: '#06b6d4',     // Ocean 500
+          urgent: '#0891b2',   // Ocean 600
+          tbd: '#0e7490',      // Ocean 700
         },
         status: {
-          todo: '#3b82f6',
-          progress: '#f59e0b',
-          done: '#10b981',
-          scoping: '#14b8a6',
+          todo: '#67e8f9',     // Ocean 300
+          progress: '#22d3ee', // Ocean 400
+          done: '#06b6d4',     // Ocean 500
+          scoping: '#0891b2',  // Ocean 600
         }
       },
       fontFamily: {
