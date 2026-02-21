@@ -210,9 +210,9 @@ class YouTrackService {
     const query = 'project:ATOP Type:Project' // Filter for issues with type "Project" from ATOP project only
     
     if (this.config.useProxy) {
-      return this.makeRequest('/issues', { fields, query, top: '100' })
+      return this.makeRequest('/issues', { fields, query, top: '500' })
     } else {
-      return this.makeRequest('/issues', { fields, query, '$top': '100' })
+      return this.makeRequest('/issues', { fields, query, '$top': '500' })
     }
   }
 
@@ -356,7 +356,7 @@ class YouTrackService {
     const state = stateField?.value?.name ? {
       id: stateField.value.name.toLowerCase().replace(/\s+/g, '-'),
       name: stateField.value.name,
-      resolved: ['Done', 'Closed', 'Resolved', 'Finished'].includes(stateField.value.name)
+      resolved: ['Done', 'Closed', 'Resolved', 'Finished', 'Archived'].includes(stateField.value.name)
     } : { id: 'open', name: 'Open', resolved: false }
 
     // Extract assignee from customFields
