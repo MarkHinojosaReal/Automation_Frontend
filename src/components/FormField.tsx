@@ -33,19 +33,21 @@ interface TextInputProps {
   placeholder?: string
   value: string
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onBlur?: (e: React.FocusEvent<HTMLInputElement>) => void
   required?: boolean
   disabled?: boolean
 }
 
-export function TextInput({ 
-  id, 
-  name, 
-  type = "text", 
-  placeholder, 
-  value, 
-  onChange, 
+export function TextInput({
+  id,
+  name,
+  type = "text",
+  placeholder,
+  value,
+  onChange,
+  onBlur,
   required = false,
-  disabled = false 
+  disabled = false
 }: TextInputProps) {
   return (
     <input
@@ -55,6 +57,7 @@ export function TextInput({
       placeholder={placeholder}
       value={value}
       onChange={onChange}
+      onBlur={onBlur}
       required={required}
       disabled={disabled}
       className="input-glass w-full text-breeze-800 placeholder-breeze-500 disabled:opacity-50 disabled:cursor-not-allowed"

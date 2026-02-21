@@ -20,6 +20,7 @@ interface TicketFormData {
   priority: string
   type: string
   email: string
+  existingProjectUrl: string
   projectName: string
   projectDescription: string
   manualTimeInvestment: string
@@ -40,6 +41,7 @@ function RequestPageContent() {
     priority: "medium",
     type: "new-automation",
     email: user?.email || "",
+    existingProjectUrl: "",
     projectName: "",
     projectDescription: "",
     manualTimeInvestment: "",
@@ -64,12 +66,53 @@ function RequestPageContent() {
   const [editingLinkIndex, setEditingLinkIndex] = useState<number | null>(null)
   const [tempLinkData, setTempLinkData] = useState<{ name: string; url: string }>({ name: '', url: '' })
   const [showNoLinksModal, setShowNoLinksModal] = useState(false)
+  const [urlValidation, setUrlValidation] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle')
+  const [urlValidationMessage, setUrlValidationMessage] = useState('')
 
   // Generate a mock ticket number (in real implementation, this would come from the API)
   const generateTicketNumber = () => {
     const currentYear = new Date().getFullYear()
     const randomNumber = Math.floor(Math.random() * 9000) + 1000
     return `ATOP-${randomNumber}`
+  }
+
+  const validateExistingProjectUrl = async (url: string) => {
+    if (!url.trim()) {
+      setUrlValidation('idle')
+      setUrlValidationMessage('')
+      return
+    }
+
+    const match = url.match(/([A-Z]+-\d+)/)
+    if (!match) {
+      setUrlValidation('invalid')
+      setUrlValidationMessage('Could not find an issue ID in this URL (e.g. ATOP-1620)')
+      return
+    }
+
+    const issueId = match[1]
+    setUrlValidation('validating')
+    setUrlValidationMessage(`Checking ${issueId}...`)
+
+    const response = await youTrackService.getIssueById(issueId, ['idReadable', 'customFields(name,value(name))'])
+
+    if (response.error || !response.data) {
+      setUrlValidation('invalid')
+      setUrlValidationMessage(`Issue ${issueId} not found`)
+      return
+    }
+
+    const issue = response.data as any
+    const typeField = issue.customFields?.find((f: any) => f.name === 'Type')
+    const isProject = typeField?.value?.name === 'Project'
+
+    if (isProject) {
+      setUrlValidation('valid')
+      setUrlValidationMessage(`${issueId} is a valid project`)
+    } else {
+      setUrlValidation('invalid')
+      setUrlValidationMessage(`${issueId} exists but is not a Project type`)
+    }
   }
 
   // Fetch initiatives from YouTrack on component mount
@@ -143,6 +186,11 @@ function RequestPageContent() {
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }))
     }
+    // Reset URL validation when type changes or URL is cleared
+    if (name === 'type' || (name === 'existingProjectUrl' && !value.trim())) {
+      setUrlValidation('idle')
+      setUrlValidationMessage('')
+    }
   }
 
   const addLink = () => {
@@ -205,6 +253,15 @@ function RequestPageContent() {
     const newErrors: Record<string, string> = {}
     
     // Email is auto-populated from user account, no need to validate
+    if (formData.type === 'update-automation') {
+      if (!formData.existingProjectUrl.trim()) {
+        newErrors.existingProjectUrl = "Existing project URL is required"
+      } else if (urlValidation === 'invalid') {
+        newErrors.existingProjectUrl = urlValidationMessage
+      } else if (urlValidation !== 'valid') {
+        newErrors.existingProjectUrl = "Please wait for URL validation to complete"
+      }
+    }
     if (!formData.projectName.trim()) {
       newErrors.projectName = "Project name is required"
     }
@@ -240,18 +297,19 @@ function RequestPageContent() {
     setIsSubmitting(true)
     
     try {
+      const isEnhancement = formData.type === 'update-automation'
+
       // Create ticket in YouTrack ATOP project with exact field mapping
       const issueData = {
-        summary: formData.projectName, // Summary = Project Name
-        description: `### Project Description\n${formData.projectDescription}\n\n### What Needs to Be Done\n* Task Breakdown\n\n### Completion Criteria\n* \n\n**Manual Time Investment:**\n${formData.manualTimeInvestment}\n\n**Priority:** ${formData.priority}`, // Structured template with project description
+        summary: formData.projectName,
+        description: `### Project Description\n${formData.projectDescription}${isEnhancement ? `\n\n**Existing Project:** ${formData.existingProjectUrl}` : ''}\n\n### What Needs to Be Done\n* Task Breakdown\n\n### Completion Criteria\n* \n\n**Manual Time Investment:**\n${formData.manualTimeInvestment}\n\n**Priority:** ${formData.priority}`,
         project: '0-5', // ATOP project internal ID
-        type: 'Project', // Always create as Type: Project
-        state: 'Needs Scoping', // Always set State to "Needs Scoping"
-        requestor: formData.email, // Requestor custom field = email
-        initiative: formData.initiative, // Initiative custom field
-        targetDate: formData.targetDate || undefined, // Target Date custom field
-        // Priority is always set to TBD in the service
-        links: formData.links.filter(link => link.name && link.url)
+        state: 'Needs Scoping',
+        requestor: formData.email,
+        initiative: formData.initiative,
+        targetDate: formData.targetDate || undefined,
+        links: formData.links.filter(link => link.name && link.url),
+        isEnhancement
       }
 
       const response = await youTrackService.createIssue(issueData)
@@ -289,6 +347,14 @@ function RequestPageContent() {
       
       setTicketNumber(newTicketNumber)
 
+      // Apply Automation_Enhancement tag for enhancement requests
+      if (isEnhancement) {
+        const tagResult = await youTrackService.addTagToIssue(newTicketNumber, 'Automation_Enhancement')
+        if (tagResult.error) {
+          console.error('Failed to apply tag:', tagResult.error)
+        }
+      }
+
       // Show success modal
       setShowSuccessModal(true)
       
@@ -311,7 +377,8 @@ function RequestPageContent() {
     setFormData({
       priority: "medium",
       type: "new-automation",
-      email: "",
+      email: user?.email || "",
+      existingProjectUrl: "",
       projectName: "",
       projectDescription: "",
       manualTimeInvestment: "",
@@ -322,6 +389,8 @@ function RequestPageContent() {
     // Reset link editing state
     setEditingLinkIndex(null)
     setTempLinkData({ name: '', url: '' })
+    setUrlValidation('idle')
+    setUrlValidationMessage('')
   }
 
   const handleSubmitAnyway = async () => {
@@ -361,9 +430,7 @@ function RequestPageContent() {
                         onChange={handleInputChange}
                       >
                         <option value="new-automation">New Automation</option>
-                        <option value="update-automation">Update Existing Automation</option>
-                        <option value="new-tool">New Tool</option>
-                        <option value="research">Research</option>
+                        <option value="update-automation">Automation Enhancement</option>
                       </Select>
                     </FormField>
 
@@ -381,6 +448,33 @@ function RequestPageContent() {
                       </Select>
                     </FormField>
                   </div>
+
+                  {formData.type === 'update-automation' && (
+                    <FormField label="Existing Project URL" id="existingProjectUrl" required error={errors.existingProjectUrl}>
+                      <TextInput
+                        id="existingProjectUrl"
+                        name="existingProjectUrl"
+                        type="url"
+                        placeholder="https://realbrokerage.youtrack.cloud/issue/ATOP-1620"
+                        value={formData.existingProjectUrl}
+                        onChange={handleInputChange}
+                        onBlur={() => validateExistingProjectUrl(formData.existingProjectUrl)}
+                        required
+                      />
+                      {urlValidation === 'validating' && (
+                        <p className="mt-1.5 text-sm text-breeze-500 flex items-center space-x-1">
+                          <span className="inline-block w-3 h-3 border-2 border-breeze-400 border-t-transparent rounded-full animate-spin" />
+                          <span>{urlValidationMessage}</span>
+                        </p>
+                      )}
+                      {urlValidation === 'valid' && (
+                        <p className="mt-1.5 text-sm text-green-600 font-medium">✓ {urlValidationMessage}</p>
+                      )}
+                      {urlValidation === 'invalid' && !errors.existingProjectUrl && (
+                        <p className="mt-1.5 text-sm text-red-500">{urlValidationMessage}</p>
+                      )}
+                    </FormField>
+                  )}
 
                   <FormField label="Your Email Address" id="email" required error={errors.email}>
                     <TextInput
@@ -690,4 +784,3 @@ function RequestPage() {
 }
 
 export default RequestPage
-

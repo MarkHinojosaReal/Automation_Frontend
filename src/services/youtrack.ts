@@ -242,6 +242,10 @@ class YouTrackService {
     }
   }
 
+  async addTagToIssue(issueId: string, tagName: string): Promise<YouTrackApiResponse> {
+    return this.makeRequest(`/issues/${issueId}/tags`, { fields: 'id,name' }, 'POST', { name: tagName })
+  }
+
   async createIssue(issueData: {
     summary: string
     description: string
@@ -253,24 +257,24 @@ class YouTrackService {
     targetDate?: string
     priority?: string
     links?: Array<{ name: string; url: string }>
+    isEnhancement?: boolean
   }): Promise<YouTrackApiResponse> {
     try {
-      const payload = {
+      const payload: any = {
         project: { id: issueData.project },
         summary: issueData.summary,
         description: issueData.description,
         customFields: [
-          // Always set Type to "Project"
-          { 
-            "name": "Type", 
-            "$type": "SingleEnumIssueCustomField", 
-            "value": { "name": "Project" } 
+          {
+            "name": "Type",
+            "$type": "SingleEnumIssueCustomField",
+            "value": { "name": "Project" }
           },
           // Always set State to "Needs Scoping"
-          { 
-            "name": "State", 
-            "$type": "SingleEnumIssueCustomField", 
-            "value": { "name": "Needs Scoping" } 
+          {
+            "name": "State",
+            "$type": "SingleEnumIssueCustomField",
+            "value": { "name": "Needs Scoping" }
           },
           // Set Priority to always be TBD
           {

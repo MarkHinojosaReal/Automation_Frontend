@@ -361,6 +361,27 @@ app.post('/api/metabase/inspect', async (req, res) => {
   }
 });
 
+// POST endpoint for adding a tag to an issue by name
+app.post('/api/youtrack/issues/:issueId/tags', async (req, res) => {
+  try {
+    const { issueId } = req.params;
+    const { name } = req.body;
+
+    // Look up tag by name to get its ID
+    const tags = await makeYouTrackRequest(`/api/tags?fields=id,name&query=${encodeURIComponent(name)}`);
+    const tag = Array.isArray(tags) ? tags.find(t => t.name === name) : null;
+
+    if (!tag) {
+      return res.status(404).json({ error: `Tag '${name}' not found` });
+    }
+
+    const data = await makeYouTrackRequest(`/api/issues/${issueId}/tags`, 'POST', { id: tag.id });
+    res.json(data);
+  } catch (error) {
+    res.status(500).json({ error: error.message, timestamp: new Date().toISOString() });
+  }
+});
+
 // POST endpoint for creating issues
 app.post('/api/youtrack/issues', async (req, res) => {
   try {
@@ -415,14 +436,15 @@ app.use('/api/automations', adminOnlyMiddleware, automationsRoutes);
 // Generic proxy endpoint
 app.all('/api/youtrack/*', async (req, res) => {
   try {
-    const path = req.path.replace('/api/youtrack', '');
+    // Strip /api/youtrack and prepend /api so YouTrack REST API receives /api/...
+    const ytPath = req.path.replace('/api/youtrack', '/api');
     const queryString = new URLSearchParams(req.query).toString();
-    const endpoint = queryString ? `${path}?${queryString}` : path;
-    
+    const endpoint = queryString ? `${ytPath}?${queryString}` : ytPath;
+
     const data = await makeYouTrackRequest(endpoint, req.method, req.body);
     res.json(data);
   } catch (error) {
-    res.status(500).json({ 
+    res.status(500).json({
       error: error.message,
       timestamp: new Date().toISOString()
     });

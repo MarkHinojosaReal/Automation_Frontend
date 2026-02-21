@@ -26,7 +26,7 @@ bd update <id> --status=in_progress
 ### Closing an Issue
 
 1. Close the issue: `bd close <id>`
-2. **Stage changes for git** with `git add`
+2. **Stage only the files you worked on** with `git add <file>` — do not stage unrelated changes
 3. **Never commit** — only the user commits changes to git
 
 ## Quick Reference
@@ -42,7 +42,7 @@ bd sync               # Sync beads with git
 
 ## Git Workflow
 
-- Agents **stage** changes with `git add`
+- Agents **stage** only the files they worked on during the task — do not stage unrelated changes
 - Agents **never commit** — the user retains full control of commits
 - Run `bd sync` to sync beads changes with git when appropriate
 
