@@ -1,11 +1,7 @@
 name: Sync Beads → Linear
 
 on:
-  push:
-    branches: [main]
-    paths:
-      - '.beads/issues.jsonl'
-
+  workflow_call:
   workflow_dispatch:
 
 jobs:
