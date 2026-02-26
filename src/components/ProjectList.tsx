@@ -1,7 +1,8 @@
 import React, { useState } from "react"
 import { ProjectCard } from "./ProjectCard"
-import { Search, ArrowUpDown, X, SlidersHorizontal, ChevronDown } from "lucide-react"
+import { Search, ArrowUpDown, X, SlidersHorizontal, ChevronDown, ExternalLink } from "lucide-react"
 import type { Ticket } from "../types"
+import { buildYouTrackUrl } from "../utils/buildYouTrackQuery"
 
 interface ProjectListProps {
   projects: Ticket[]
@@ -49,6 +50,18 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
   const uniqueRequestors = Array.from(new Set(projects.map(project => project.requestor?.name || project.reporter.name))).sort()
   const uniqueAssignees = Array.from(new Set(projects.filter(project => project.assignee).map(project => project.assignee!.name))).sort()
   const uniqueInitiatives = Array.from(new Set(projects.filter(project => project.initiative).map(project => project.initiative!))).sort()
+
+  // Login maps for building YouTrack query URLs (display name → YouTrack login)
+  const requestorLoginMap: Record<string, string> = {}
+  projects.forEach(project => {
+    const user = project.requestor || project.reporter
+    requestorLoginMap[user.name] = user.id
+  })
+
+  const assigneeLoginMap: Record<string, string> = {}
+  projects.forEach(project => {
+    if (project.assignee) assigneeLoginMap[project.assignee.name] = project.assignee.id
+  })
 
   // Toggle functions
   const toggleState = (state: string) => {
@@ -281,6 +294,32 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
                 className="input-glass pl-10 pr-4 w-full text-breeze-800 placeholder-breeze-500"
               />
             </div>
+
+            {/* Open in YouTrack */}
+            <a
+              href={buildYouTrackUrl({
+                selectedStates,
+                stateFilterMode,
+                selectedPriorities,
+                priorityFilterMode,
+                selectedRequestors,
+                requestorFilterMode,
+                requestorLoginMap,
+                selectedAssignees,
+                assigneeFilterMode,
+                assigneeLoginMap,
+                includeUnassigned,
+                selectedInitiatives,
+                initiativeFilterMode,
+                includeNoInitiative,
+              })}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="bg-ocean-500 hover:bg-ocean-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 whitespace-nowrap focus:outline-none focus:ring-0 shadow-none hover:shadow-none"
+            >
+              <ExternalLink className="w-4 h-4" />
+              <span>Open in YouTrack</span>
+            </a>
           </div>
 
           {/* Filter Sidebar Overlay */}
