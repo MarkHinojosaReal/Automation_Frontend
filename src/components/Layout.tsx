@@ -50,7 +50,6 @@ export function Layout({ children, title }: LayoutProps) {
         onToggleUserMenu={toggleUserMenu}
         onLogout={handleLogout}
       />
-      <Header title={title} />
 
       <div className="flex relative">
         <Sidebar
@@ -60,7 +59,7 @@ export function Layout({ children, title }: LayoutProps) {
             setIsUserMenuOpen(false)
           }}
         />
-        <main className="flex-1 p-4 lg:p-6 lg:ml-64 min-h-screen pt-20 lg:pt-24">
+        <main className="flex-1 p-4 lg:p-6 lg:ml-64 min-h-screen pt-20 lg:pt-6">
           <div className="max-w-7xl mx-auto relative">
             {children}
           </div>

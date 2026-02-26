@@ -1,5 +1,4 @@
 import React from "react"
-import { Link } from "react-router-dom"
 import { Menu, X, User, LogOut } from "lucide-react"
 import logo from "../images/logo.png"
 
@@ -44,7 +43,7 @@ export function Header({
         </div>
         
         <div className="flex items-center space-x-4">
-          {isMobile ? (
+          {isMobile && (
             <>
               <button
                 onClick={onToggleSidebar}
@@ -83,13 +82,6 @@ export function Header({
                 </div>
               )}
             </>
-          ) : (
-            <Link
-              to="/request"
-              className="btn-primary bg-accent-500 hover:bg-accent-600 text-white px-4 py-2 rounded-lg transition-colors duration-200 shadow-lg hover:shadow-xl"
-            >
-              Request Automation
-            </Link>
           )}
         </div>
       </div>
