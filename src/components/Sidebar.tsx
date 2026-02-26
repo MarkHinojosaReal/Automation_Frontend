@@ -29,6 +29,8 @@ function SidebarItem({ to, icon, label, isActive = false, accent = false, onClic
       className={`menu-item flex items-center space-x-3 px-4 py-3 mx-2 transition-all duration-300 relative z-20 ${
         isActive
           ? `menu-item active ${accent ? 'accent' : ''}`
+          : accent
+          ? "bg-accent-500 hover:bg-accent-600 text-white rounded-lg shadow-lg hover:shadow-xl font-medium"
           : "text-white/80 hover:text-white"
       }`}
       onClick={onClick}

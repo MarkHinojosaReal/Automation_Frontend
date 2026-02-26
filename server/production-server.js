@@ -135,7 +135,7 @@ app.get('/health', (_req, res) => {
 // API Routes
 app.get('/api/metrics', createMetricsHandler());
 app.post('/api/metabase/inspect', createMetabaseInspectHandler());
-registerYouTrackRoutes(app, makeYouTrackRequest);
+registerYouTrackRoutes(app, makeYouTrackRequest, { includeTagRoute: true });
 
 // Serve static files from the dist directory built by Vite
 // Note: Vite builds to /opt/render/project/src/dist

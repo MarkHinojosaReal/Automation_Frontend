@@ -1,6 +1,7 @@
 import React, { useState } from "react"
 import { ProjectCard } from "./ProjectCard"
-import { Search, ArrowUpDown, X, SlidersHorizontal, ChevronDown, ExternalLink } from "lucide-react"
+import { ProjectTable } from "./ProjectTable"
+import { Search, ArrowUpDown, X, SlidersHorizontal, ChevronDown, ExternalLink, LayoutGrid, Table2 } from "lucide-react"
 import type { Ticket } from "../types"
 import { buildYouTrackUrl } from "../utils/buildYouTrackQuery"
 
@@ -11,6 +12,7 @@ interface ProjectListProps {
 }
 
 export function ProjectList({ projects, compact = false, showFilters = false }: ProjectListProps) {
+  const [viewMode, setViewMode] = useState<"cards" | "table">("cards")
   const [showFilterSidebar, setShowFilterSidebar] = useState(false)
   const [showSortSidebar, setShowSortSidebar] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
@@ -773,19 +775,53 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
         </>
       )}
 
-      {/* Projects */}
-      <div className={compact ? "glass-card border border-white/20 rounded-xl overflow-hidden" : "space-y-4"}>
-        {filteredProjects.map((project) => (
-          <div key={project.id} className="w-full">
-            <ProjectCard project={project} compact={compact} />
-          </div>
-        ))}
-      </div>
-
-      {filteredProjects.length === 0 && projects.length > 0 && (
-        <div className="text-center py-12">
-          <p className="text-breeze-600">No projects match your current filters.</p>
+      {/* View Toggle */}
+      {showFilters && (
+        <div className="flex items-center gap-1 mb-4 p-1 bg-breeze-100 rounded-lg w-fit">
+          <button
+            onClick={() => setViewMode("cards")}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              viewMode === "cards"
+                ? "bg-white text-ocean-700 shadow-sm"
+                : "text-breeze-600 hover:text-breeze-800"
+            }`}
+          >
+            <LayoutGrid className="w-4 h-4" />
+            <span>Cards</span>
+          </button>
+          <button
+            onClick={() => setViewMode("table")}
+            className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+              viewMode === "table"
+                ? "bg-white text-ocean-700 shadow-sm"
+                : "text-breeze-600 hover:text-breeze-800"
+            }`}
+          >
+            <Table2 className="w-4 h-4" />
+            <span>Table</span>
+          </button>
         </div>
+      )}
+
+      {/* Projects */}
+      {viewMode === "table" ? (
+        <ProjectTable projects={filteredProjects} />
+      ) : (
+        <>
+          <div className={compact ? "glass-card border border-white/20 rounded-xl overflow-hidden" : "space-y-4"}>
+            {filteredProjects.map((project) => (
+              <div key={project.id} className="w-full">
+                <ProjectCard project={project} compact={compact} />
+              </div>
+            ))}
+          </div>
+
+          {filteredProjects.length === 0 && projects.length > 0 && (
+            <div className="text-center py-12">
+              <p className="text-breeze-600">No projects match your current filters.</p>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
