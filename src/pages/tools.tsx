@@ -16,6 +16,7 @@ import {
   Plus
 } from "lucide-react"
 import { youTrackService } from "../services/youtrack"
+import type { Ticket } from "../types"
 
 interface Tool {
   id: string
@@ -28,16 +29,92 @@ interface Tool {
   href?: string
 }
 
+interface MetabaseColumn {
+  index: number
+  name: string
+  type: string
+}
+
+interface InspectorResult {
+  card_id: string
+  card_title: string
+  sql_query: string
+  columns: MetabaseColumn[]
+  error?: string
+}
+
+interface ProjectReportData {
+  completedProjects: Ticket[]
+  upcomingProjects: Ticket[]
+  queuedProjects: Ticket[]
+  completedTimeSaved: number
+  completedCostImpact: number
+  upcomingTimeSaved: number
+  upcomingCostImpact: number
+  totalTimeSaved: number
+  totalCostImpact: number
+  generatedAt: string
+}
+
+interface FilteredMetrics {
+  completedProjects: Ticket[]
+  upcomingProjects: Ticket[]
+  completedTimeSaved: number
+  completedCostImpact: number
+  upcomingTimeSaved: number
+  upcomingCostImpact: number
+  totalTimeSaved: number
+  totalCostImpact: number
+}
+
+function isMetabaseColumn(value: unknown): value is MetabaseColumn {
+  if (!value || typeof value !== "object") {
+    return false
+  }
+
+  return (
+    "index" in value &&
+    typeof value.index === "number" &&
+    "name" in value &&
+    typeof value.name === "string" &&
+    "type" in value &&
+    typeof value.type === "string"
+  )
+}
+
+function normalizeInspectorResult(data: unknown): InspectorResult {
+  if (!data || typeof data !== "object") {
+    return {
+      card_id: "",
+      card_title: "",
+      sql_query: "",
+      columns: [],
+      error: "Unexpected response from inspector endpoint"
+    }
+  }
+
+  const columnsSource = "columns" in data && Array.isArray(data.columns) ? data.columns : []
+  const columns = columnsSource.filter(isMetabaseColumn)
+
+  return {
+    card_id: "card_id" in data && typeof data.card_id === "string" ? data.card_id : "",
+    card_title: "card_title" in data && typeof data.card_title === "string" ? data.card_title : "Unknown",
+    sql_query: "sql_query" in data && typeof data.sql_query === "string" ? data.sql_query : "",
+    columns,
+    error: "error" in data && typeof data.error === "string" ? data.error : undefined
+  }
+}
+
 function ToolsPageContent() {
   // Metabase Card Inspector state
   const [cardId, setCardId] = useState<string>("")
-  const [inspectorResult, setInspectorResult] = useState<any>(null)
+  const [inspectorResult, setInspectorResult] = useState<InspectorResult | null>(null)
   const [inspecting, setInspecting] = useState<boolean>(false)
   const [inspectorError, setInspectorError] = useState<string>("")
   const [selectedTool, setSelectedTool] = useState<string | null>(null)
 
   // Project Report Generator state
-  const [reportData, setReportData] = useState<any>(null)
+  const [reportData, setReportData] = useState<ProjectReportData | null>(null)
   const [generatingReport, setGeneratingReport] = useState<boolean>(false)
   const [reportError, setReportError] = useState<string>("")
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set())
@@ -107,7 +184,7 @@ function ToolsPageContent() {
       }
 
       const data = await response.json()
-      setInspectorResult(data)
+      setInspectorResult(normalizeInspectorResult(data))
     } catch (error) {
       setInspectorError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
@@ -142,31 +219,35 @@ function ToolsPageContent() {
         throw new Error(response.error)
       }
 
+      if (!Array.isArray(response.data)) {
+        throw new Error("Unexpected project response format")
+      }
+
       // Transform the raw YouTrack data to our internal format
-      const projects = (response.data || []).map((issue: any) => youTrackService.transformIssueToTicket(issue))
+      const projects = response.data.map((issue) => youTrackService.transformIssueToTicket(issue))
 
       // Separate completed, upcoming, and queued projects
-      const completedProjects = projects.filter((project: any) => {
+      const completedProjects = projects.filter((project) => {
         return ['Done', 'Completed', 'Closed', 'Resolved', 'Finished'].includes(project.state.name)
       })
 
-      const upcomingProjects = projects.filter((project: any) => {
+      const upcomingProjects = projects.filter((project) => {
         return project.state.name === 'In Progress'
       })
 
-      const queuedProjects = projects.filter((project: any) => {
+      const queuedProjects = projects.filter((project) => {
         return ['To Do', 'Discover', 'Need to Scope'].includes(project.state.name)
       })
 
       // Calculate totals for completed projects
-      const completedTimeSaved = completedProjects.reduce((total: number, project: any) => {
+      const completedTimeSaved = completedProjects.reduce((total, project) => {
         return total + (project.savedTimeMins || 0) / 60 // Convert to hours
       }, 0)
 
       const completedCostImpact = completedTimeSaved * 35 // $35/hour based on $70k salary
 
       // Calculate totals for upcoming projects
-      const upcomingTimeSaved = upcomingProjects.reduce((total: number, project: any) => {
+      const upcomingTimeSaved = upcomingProjects.reduce((total, project) => {
         return total + (project.savedTimeMins || 0) / 60 // Convert to hours
       }, 0)
 
@@ -176,7 +257,7 @@ function ToolsPageContent() {
       const totalTimeSaved = completedTimeSaved + upcomingTimeSaved
       const totalCostImpact = completedCostImpact + upcomingCostImpact
 
-      const allProjectIds = [...completedProjects, ...upcomingProjects].map((p: any) => p.idReadable)
+      const allProjectIds = [...completedProjects, ...upcomingProjects].map((project) => project.idReadable)
       setSelectedProjects(new Set(allProjectIds))
 
       setReportData({
@@ -209,23 +290,23 @@ function ToolsPageContent() {
     setSelectedProjects(newSelected)
   }
 
-  const getFilteredMetrics = () => {
+  const getFilteredMetrics = (): FilteredMetrics | null => {
     if (!reportData) return null
 
-    const filteredCompleted = reportData.completedProjects.filter((p: any) => 
-      selectedProjects.has(p.idReadable)
+    const filteredCompleted = reportData.completedProjects.filter((project) =>
+      selectedProjects.has(project.idReadable)
     )
-    const filteredUpcoming = reportData.upcomingProjects.filter((p: any) => 
-      selectedProjects.has(p.idReadable)
+    const filteredUpcoming = reportData.upcomingProjects.filter((project) =>
+      selectedProjects.has(project.idReadable)
     )
 
-    const completedTimeSaved = filteredCompleted.reduce((total: number, project: any) => {
+    const completedTimeSaved = filteredCompleted.reduce((total, project) => {
       return total + (project.savedTimeMins || 0) / 60
     }, 0)
 
     const completedCostImpact = completedTimeSaved * 35
 
-    const upcomingTimeSaved = filteredUpcoming.reduce((total: number, project: any) => {
+    const upcomingTimeSaved = filteredUpcoming.reduce((total, project) => {
       return total + (project.savedTimeMins || 0) / 60
     }, 0)
 
@@ -298,7 +379,7 @@ function ToolsPageContent() {
     }
   }
 
-  const formatProjectForReport = (project: any) => {
+  const formatProjectForReport = (project: Ticket) => {
     const initiative = project.initiative || 'Not Specified'
     const savedTimeHours = (project.savedTimeMins || 0) / 60
     const costImpact = savedTimeHours * 35 // $35/hour based on $70k salary
@@ -349,7 +430,7 @@ Total Cost Impact: ~$${Math.round(filteredMetrics.totalCostImpact).toLocaleStrin
 
 **All tasks and time savings were given by the project requestor. Cost impact is based on $70,000 salary / time savings. For continuous tasks, we are calculating on a full year.
 
-${filteredMetrics.completedProjects.map((project: any) => {
+${filteredMetrics.completedProjects.map((project) => {
   const formatted = formatProjectForReport(project)
   return `### ${formatted.name}
 
@@ -371,7 +452,7 @@ Cost Impact: ~$${Math.round(formatted.costImpact).toLocaleString()}
 
 **All tasks and time savings were given by the project requestor. Cost impact is based on $70,000 salary / time savings. For continuous tasks, we are calculating on a full year.
 
-${filteredMetrics.upcomingProjects.map((project: any) => {
+${filteredMetrics.upcomingProjects.map((project) => {
   const formatted = formatProjectForReport(project)
   return `### ${formatted.name}
 
@@ -519,7 +600,7 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
                     <div className="bg-white border border-breeze-200 rounded-lg p-4">
                       <h4 className="font-semibold text-breeze-800 mb-3">Columns ({inspectorResult.columns.length})</h4>
                       <div className="space-y-2">
-                        {inspectorResult.columns.map((col: any) => (
+                        {inspectorResult.columns.map((col) => (
                           <div key={col.index} className="flex items-center space-x-3 text-sm">
                             <span className="font-mono text-breeze-400 w-8">{col.index}.</span>
                             <span className="font-medium text-breeze-800">{col.name}</span>
@@ -674,7 +755,7 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
                 <div className="bg-white border border-breeze-200 rounded-lg p-6">
                   <h3 className="text-xl font-bold text-breeze-800 mb-4">Completed Projects</h3>
                   <div className="space-y-6">
-                    {reportData.completedProjects.map((project: any, index: number) => {
+                    {reportData.completedProjects.map((project) => {
                       const formatted = formatProjectForReport(project)
                       const isSelected = selectedProjects.has(project.idReadable)
                       return (
@@ -723,7 +804,7 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
                 <div className="bg-white border border-breeze-200 rounded-lg p-6">
                   <h3 className="text-xl font-bold text-breeze-800 mb-4">In Progress Projects</h3>
                   <div className="space-y-4">
-                    {reportData.upcomingProjects.map((project: any, index: number) => {
+                    {reportData.upcomingProjects.map((project) => {
                       const formatted = formatProjectForReport(project)
                       const isSelected = selectedProjects.has(project.idReadable)
                       return (

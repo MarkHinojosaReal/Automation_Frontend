@@ -31,7 +31,7 @@ function SidebarItem({ to, icon, label, isActive = false, accent = false, onClic
           ? `menu-item active ${accent ? 'accent' : ''}`
           : accent
           ? "bg-accent-500 hover:bg-accent-600 text-white rounded-lg shadow-lg hover:shadow-xl font-medium"
-          : "text-white/70 hover:text-white/90"
+          : "text-white/80 hover:text-white"
       }`}
       onClick={onClick}
     >
@@ -95,7 +95,7 @@ export function Sidebar({ isOpen = false, onClose }: SidebarProps) {
   }
 
   return (
-    <aside className={`w-64 sidebar-glass fixed left-0 top-0 bottom-0 overflow-y-auto transition-transform duration-300 z-50 ${
+    <aside className={`w-64 sidebar-glass fixed left-0 top-0 bottom-0 overflow-y-auto transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] z-50 ${
       isOpen ? 'translate-x-0' : '-translate-x-full'
     } lg:translate-x-0`}>
       {/* Logo Section - Hidden on mobile (shown in header) */}

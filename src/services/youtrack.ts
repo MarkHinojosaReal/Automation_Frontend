@@ -1,16 +1,27 @@
+import type { Ticket } from "../types"
+
 interface YouTrackConfig {
   proxyUrl: string
   useProxy: boolean
 }
 
+interface YouTrackNamedValue {
+  name: string
+}
+
+interface YouTrackTag {
+  name: string
+}
+
+type YouTrackCustomFieldValue = YouTrackNamedValue | number | string | null
+
 interface YouTrackCustomField {
   name: string
-  value?: {
-    name: string
-  }
+  value?: YouTrackCustomFieldValue
 }
 
 interface YouTrackIssue {
+  id?: string
   idReadable: string
   summary: string
   description?: string
@@ -27,11 +38,21 @@ interface YouTrackIssue {
   state?: {
     name: string
   }
+  tags?: YouTrackTag[]
   customFields?: YouTrackCustomField[]
 }
 
-interface YouTrackApiResponse {
-  data?: YouTrackIssue[]
+interface YouTrackCreatedIssue {
+  id: string
+  idReadable?: string
+}
+
+interface YouTrackNamedOption {
+  name: string
+}
+
+interface YouTrackApiResponse<T = unknown> {
+  data?: T
   error?: string
 }
 
@@ -45,7 +66,12 @@ class YouTrackService {
     }
   }
 
-  private async makeRequest(endpoint: string, params?: Record<string, string>, method: string = 'GET', body?: any): Promise<YouTrackApiResponse> {
+  private async makeRequest<T>(
+    endpoint: string,
+    params?: Record<string, string>,
+    method: string = 'GET',
+    body?: Record<string, unknown>
+  ): Promise<YouTrackApiResponse<T>> {
     try {
       let url: string
       
@@ -99,7 +125,7 @@ class YouTrackService {
         throw new Error(`API Error: ${response.status} ${response.statusText}`)
       }
 
-      const data = await response.json()
+      const data: T = await response.json()
       return { data }
     } catch (error) {
       console.error('API Request failed:', error)
@@ -109,53 +135,52 @@ class YouTrackService {
     }
   }
 
-  async getCurrentSprintIssues(): Promise<YouTrackApiResponse> {
+  async getCurrentSprintIssues(): Promise<YouTrackApiResponse<YouTrackIssue[]>> {
     const agileId = import.meta.env.VITE_YOUTRACK_AGILE_ID || '124-333'
     const fields = 'idReadable,summary,description,created,updated,reporter(name,email),assignee(name,email),customFields(name,value(name)),state(name)'
     
     if (this.config.useProxy) {
-      return this.makeRequest('/current-sprint', { agileId, fields })
+      return this.makeRequest<YouTrackIssue[]>('/current-sprint', { agileId, fields })
     } else {
-      return this.makeRequest(`/agiles/${agileId}/sprints/current/issues`, { fields })
+      return this.makeRequest<YouTrackIssue[]>(`/agiles/${agileId}/sprints/current/issues`, { fields })
     }
   }
 
-  async getAllIssues(fields: string[] = ['idReadable', 'summary', 'description', 'created', 'updated']): Promise<YouTrackApiResponse> {
+  async getAllIssues(fields: string[] = ['idReadable', 'summary', 'description', 'created', 'updated']): Promise<YouTrackApiResponse<YouTrackIssue[]>> {
     const fieldsParam = fields.join(',')
     
     if (this.config.useProxy) {
-      return this.makeRequest('/issues', { fields: fieldsParam, top: '100' })
+      return this.makeRequest<YouTrackIssue[]>('/issues', { fields: fieldsParam, top: '100' })
     } else {
-      return this.makeRequest('/issues', { fields: fieldsParam, '$top': '100' })
+      return this.makeRequest<YouTrackIssue[]>('/issues', { fields: fieldsParam, '$top': '100' })
     }
   }
 
-  async getIssueById(issueId: string, fields: string[] = ['idReadable', 'summary', 'description', 'created', 'updated']): Promise<YouTrackApiResponse> {
+  async getIssueById(issueId: string, fields: string[] = ['idReadable', 'summary', 'description', 'created', 'updated']): Promise<YouTrackApiResponse<YouTrackIssue>> {
     const fieldsParam = fields.join(',')
-    
-    if (this.config.useProxy) {
-      const response = await this.makeRequest(`/issues/${issueId}`, { fields: fieldsParam })
-      // Handle both array responses and single issue responses
-      if (response.data && !Array.isArray(response.data)) {
-        return { data: response.data }
-      }
-      return response
-    } else {
-      const response = await this.makeRequest(`/issues/${issueId}`, { fields: fieldsParam })
-      // Handle both array responses and single issue responses  
-      if (response.data && !Array.isArray(response.data)) {
-        return { data: response.data }
-      }
-      return response
+
+    const response = await this.makeRequest<YouTrackIssue | YouTrackIssue[]>(`/issues/${issueId}`, { fields: fieldsParam })
+    if (response.data && !Array.isArray(response.data)) {
+      return { data: response.data }
     }
+
+    if (Array.isArray(response.data) && response.data.length > 0) {
+      return { data: response.data[0] }
+    }
+
+    if (response.error) {
+      return { error: response.error }
+    }
+
+    return { error: `Issue ${issueId} not found` }
   }
 
-  async getProjectCustomFieldValues(projectId: string, fieldName: string): Promise<YouTrackApiResponse> {
+  async getProjectCustomFieldValues(projectId: string, fieldName: string): Promise<YouTrackApiResponse<YouTrackNamedOption[]>> {
     try {
       if (this.config.useProxy) {
-        return this.makeRequest(`/projects/${projectId}/custom-fields/${fieldName}`)
+        return this.makeRequest<YouTrackNamedOption[]>(`/projects/${projectId}/custom-fields/${fieldName}`)
       } else {
-        return this.makeRequest(`/admin/projects/${projectId}/customFields`, { 
+        return this.makeRequest<YouTrackNamedOption[]>(`/admin/projects/${projectId}/customFields`, {
           fields: 'id,field(id,name,fieldType(id,name)),bundle(values(name))' 
         })
       }
@@ -165,21 +190,21 @@ class YouTrackService {
     }
   }
 
-  async getCustomFieldValues(fieldName: string): Promise<YouTrackApiResponse> {
+  async getCustomFieldValues(fieldName: string): Promise<YouTrackApiResponse<YouTrackNamedOption[]>> {
     // Use ATOP project as default
     return this.getProjectCustomFieldValues('ATOP', fieldName)
   }
 
   // TEMPORARY: Count Done tasks with Automation tag in ATOP project
-  async getDoneAutomationTasksCount(): Promise<YouTrackApiResponse> {
+  async getDoneAutomationTasksCount(): Promise<YouTrackApiResponse<YouTrackIssue[]>> {
     try {
       const fields = 'idReadable,summary,state(name),tags(name)'
       const query = 'project:ATOP State:Done tag:Automation'
       
       if (this.config.useProxy) {
-        return this.makeRequest('/issues', { fields, query, top: '1000' })
+        return this.makeRequest<YouTrackIssue[]>('/issues', { fields, query, top: '1000' })
       } else {
-        return this.makeRequest('/issues', { fields, query, '$top': '1000' })
+        return this.makeRequest<YouTrackIssue[]>('/issues', { fields, query, '$top': '1000' })
       }
     } catch (error) {
       console.error('Failed to fetch done automation tasks:', error)
@@ -187,12 +212,12 @@ class YouTrackService {
     }
   }
 
-  async getAllProjectCustomFields(projectId: string = 'ATOP'): Promise<YouTrackApiResponse> {
+  async getAllProjectCustomFields(projectId: string = 'ATOP'): Promise<YouTrackApiResponse<YouTrackNamedOption[]>> {
     try {
       if (this.config.useProxy) {
-        return this.makeRequest(`/projects/${projectId}/custom-fields`)
+        return this.makeRequest<YouTrackNamedOption[]>(`/projects/${projectId}/custom-fields`)
       } else {
-        return this.makeRequest(`/admin/projects/${projectId}/customFields`, { 
+        return this.makeRequest<YouTrackNamedOption[]>(`/admin/projects/${projectId}/customFields`, {
           fields: 'id,field(id,name,fieldType(id,name)),bundle(values(name))' 
         })
       }
@@ -202,23 +227,23 @@ class YouTrackService {
     }
   }
 
-  async getProjectIssues(): Promise<YouTrackApiResponse> {
+  async getProjectIssues(): Promise<YouTrackApiResponse<YouTrackIssue[]>> {
     const fields = 'idReadable,summary,description,created,updated,reporter(name,email),assignee(name,email),customFields(name,value(name)),state(name)'
     const query = 'project:ATOP Type:Project' // Filter for issues with type "Project" from ATOP project only
     
     if (this.config.useProxy) {
-      return this.makeRequest('/issues', { fields, query, top: '500' })
+      return this.makeRequest<YouTrackIssue[]>('/issues', { fields, query, top: '500' })
     } else {
-      return this.makeRequest('/issues', { fields, query, '$top': '500' })
+      return this.makeRequest<YouTrackIssue[]>('/issues', { fields, query, '$top': '500' })
     }
   }
 
   async updateIssue(issueId: string, updateData: {
     summary?: string
     description?: string
-  }): Promise<YouTrackApiResponse> {
+  }): Promise<YouTrackApiResponse<YouTrackIssue | YouTrackCreatedIssue>> {
     try {
-      const payload: any = {}
+      const payload: Record<string, unknown> = {}
       
       if (updateData.summary !== undefined) {
         payload.summary = updateData.summary
@@ -230,9 +255,9 @@ class YouTrackService {
 
       let result
       if (this.config.useProxy) {
-        result = await this.makeRequest(`/issues/${issueId}`, {}, 'PATCH', payload)
+        result = await this.makeRequest<YouTrackIssue | YouTrackCreatedIssue>(`/issues/${issueId}`, {}, 'PATCH', payload)
       } else {
-        result = await this.makeRequest(`/issues/${issueId}`, {}, 'POST', payload)
+        result = await this.makeRequest<YouTrackIssue | YouTrackCreatedIssue>(`/issues/${issueId}`, {}, 'POST', payload)
       }
 
       return result
@@ -242,8 +267,8 @@ class YouTrackService {
     }
   }
 
-  async addTagToIssue(issueId: string, tagName: string): Promise<YouTrackApiResponse> {
-    return this.makeRequest(`/issues/${issueId}/tags`, { fields: 'id,name' }, 'POST', { name: tagName })
+  async addTagToIssue(issueId: string, tagName: string): Promise<YouTrackApiResponse<YouTrackIssue | YouTrackCreatedIssue>> {
+    return this.makeRequest<YouTrackIssue | YouTrackCreatedIssue>(`/issues/${issueId}/tags`, { fields: 'id,name' }, 'POST', { name: tagName })
   }
 
   async createIssue(issueData: {
@@ -258,9 +283,9 @@ class YouTrackService {
     priority?: string
     links?: Array<{ name: string; url: string }>
     isEnhancement?: boolean
-  }): Promise<YouTrackApiResponse> {
+  }): Promise<YouTrackApiResponse<YouTrackCreatedIssue | YouTrackIssue>> {
     try {
-      const payload: any = {
+      const payload: Record<string, unknown> = {
         project: { id: issueData.project },
         summary: issueData.summary,
         description: issueData.description,
@@ -316,23 +341,21 @@ class YouTrackService {
 
       let result
       if (this.config.useProxy) {
-        result = await this.makeRequest('/issues', {}, 'POST', payload)
+        result = await this.makeRequest<YouTrackCreatedIssue | YouTrackIssue>('/issues', {}, 'POST', payload)
       } else {
-        result = await this.makeRequest('/issues', {}, 'POST', payload)
+        result = await this.makeRequest<YouTrackCreatedIssue | YouTrackIssue>('/issues', {}, 'POST', payload)
       }
 
       // If ticket was created successfully, fetch the readable ID
-      if (result.data && (result.data as any).id) {
-        const internalId = (result.data as any).id
-
-        // Fetch the ticket details to get the readable ID
-        const ticketDetails = await this.getIssueById(internalId, ['idReadable'])
-        if (ticketDetails.data && (ticketDetails.data as any).idReadable) {
-          // Replace the internal response with readable ID
+      const createdIssue = this.getCreatedIssue(result.data)
+      if (createdIssue) {
+        const ticketDetails = await this.getIssueById(createdIssue.id, ['idReadable'])
+        const readableId = this.getReadableId(ticketDetails.data)
+        if (readableId) {
           result.data = {
-            ...(result.data as any),
-            idReadable: (ticketDetails.data as any).idReadable
-          } as any
+            ...createdIssue,
+            idReadable: readableId
+          }
         }
       }
 
@@ -343,31 +366,87 @@ class YouTrackService {
     }
   }
 
+  private getCreatedIssue(data: YouTrackApiResponse["data"]): YouTrackCreatedIssue | null {
+    if (!data || Array.isArray(data) || typeof data !== "object") {
+      return null
+    }
+
+    if (!("id" in data) || typeof data.id !== "string") {
+      return null
+    }
+
+    if ("idReadable" in data && typeof data.idReadable === "string") {
+      return { id: data.id, idReadable: data.idReadable }
+    }
+
+    return { id: data.id }
+  }
+
+  private getReadableId(data: YouTrackApiResponse["data"]): string | null {
+    if (!data || Array.isArray(data) || typeof data !== "object") {
+      return null
+    }
+
+    if ("idReadable" in data && typeof data.idReadable === "string") {
+      return data.idReadable
+    }
+
+    return null
+  }
+
+  private getCustomFieldName(value?: YouTrackCustomFieldValue): string | null {
+    if (!value || typeof value !== "object") {
+      return null
+    }
+
+    if (typeof value.name === "string") {
+      return value.name
+    }
+
+    return null
+  }
+
+  private getCustomFieldNumber(value?: YouTrackCustomFieldValue): number | null {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value
+    }
+
+    if (typeof value === "string") {
+      const parsed = Number.parseInt(value, 10)
+      return Number.isNaN(parsed) ? null : parsed
+    }
+
+    return null
+  }
+
   // Transform YouTrack data to our internal format
-  transformIssueToTicket(issue: YouTrackIssue): any {
+  transformIssueToTicket(issue: YouTrackIssue): Ticket {
     
     // Extract state from customFields
     const stateField = issue.customFields?.find(field => field.name === 'State')
-    const state = stateField?.value?.name ? {
-      id: stateField.value.name.toLowerCase().replace(/\s+/g, '-'),
-      name: stateField.value.name,
-      resolved: ['Done', 'Closed', 'Resolved', 'Finished', 'Archived'].includes(stateField.value.name)
+    const stateName = this.getCustomFieldName(stateField?.value)
+    const state = stateName ? {
+      id: stateName.toLowerCase().replace(/\s+/g, '-'),
+      name: stateName,
+      resolved: ['Done', 'Closed', 'Resolved', 'Finished', 'Archived'].includes(stateName)
     } : { id: 'open', name: 'Open', resolved: false }
 
     // Extract assignee from customFields
     const assigneeField = issue.customFields?.find(field => field.name === 'Assignee')
-    const assignee = assigneeField?.value?.name ? {
-      id: assigneeField.value.name.toLowerCase().replace(/\s+/g, '.'),
-      name: assigneeField.value.name,
-      email: `${assigneeField.value.name.toLowerCase().replace(/\s+/g, '.')}@therealbrokerage.com`
-    } : null
+    const assigneeName = this.getCustomFieldName(assigneeField?.value)
+    const assignee = assigneeName ? {
+      id: assigneeName.toLowerCase().replace(/\s+/g, '.'),
+      name: assigneeName,
+      email: `${assigneeName.toLowerCase().replace(/\s+/g, '.')}@therealbrokerage.com`
+    } : undefined
 
     // Extract requestor from custom fields (for ATOP projects, this is the actual requestor)
     const requestorField = issue.customFields?.find(field => field.name === 'Requestor')
-    const requestor = requestorField?.value?.name ? {
-      id: requestorField.value.name.toLowerCase().replace(/\s+/g, '.'),
-      name: requestorField.value.name,
-      email: `${requestorField.value.name.toLowerCase().replace(/\s+/g, '.')}@therealbrokerage.com`
+    const requestorName = this.getCustomFieldName(requestorField?.value)
+    const requestor = requestorName ? {
+      id: requestorName.toLowerCase().replace(/\s+/g, '.'),
+      name: requestorName,
+      email: `${requestorName.toLowerCase().replace(/\s+/g, '.')}@therealbrokerage.com`
     } : null
 
     // Extract reporter from YouTrack response (this is who created the ticket)
@@ -381,29 +460,31 @@ class YouTrackService {
     const priorityField = issue.customFields?.find(field => 
       field.name.toLowerCase().includes('priority')
     )
-    const priority = priorityField?.value?.name ? {
-      id: priorityField.value.name.toLowerCase(),
-      name: priorityField.value.name,
-      color: this.getPriorityColor(priorityField.value.name)
+    const priorityName = this.getCustomFieldName(priorityField?.value)
+    const priority = priorityName ? {
+      id: priorityName.toLowerCase(),
+      name: priorityName,
+      color: this.getPriorityColor(priorityName)
     } : { id: 'medium', name: 'Medium', color: '#f59e0b' }
 
     // Extract type from custom fields or default
     const typeField = issue.customFields?.find(field => 
       field.name.toLowerCase().includes('type') || field.name.toLowerCase().includes('category')
     )
-    const type = typeField?.value?.name ? {
-      id: typeField.value.name.toLowerCase().replace(/\s+/g, '-'),
-      name: typeField.value.name,
-      color: this.getTypeColor(typeField.value.name)
+    const typeName = this.getCustomFieldName(typeField?.value)
+    const type = typeName ? {
+      id: typeName.toLowerCase().replace(/\s+/g, '-'),
+      name: typeName,
+      color: this.getTypeColor(typeName)
     } : { id: 'task', name: 'Task', color: '#6366f1' }
 
     // Extract initiative from custom fields
     const initiativeField = issue.customFields?.find(field => field.name === 'Initiative')
-    const initiative = initiativeField?.value?.name || null
+    const initiative = this.getCustomFieldName(initiativeField?.value)
 
     // Extract saved time from custom fields
     const savedTimeField = issue.customFields?.find(field => field.name === 'Saved Time (Mins)')
-    const savedTimeMins = savedTimeField?.value ? parseInt(savedTimeField.value.toString()) || null : null
+    const savedTimeMins = this.getCustomFieldNumber(savedTimeField?.value)
 
     return {
       id: issue.idReadable,
@@ -427,8 +508,7 @@ class YouTrackService {
       updated: issue.updated || Date.now(),
       tags: [],
       comments: [],
-      attachments: [],
-      customFields: issue.customFields || []
+      attachments: []
     }
   }
 

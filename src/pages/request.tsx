@@ -4,6 +4,7 @@ import { AuthGuard } from "../components/AuthGuard"
 import { FormField, TextInput, TextArea, Select } from "../components/FormField"
 import { SuccessModal } from "../components/SuccessModal"
 import { youTrackService } from "../services/youtrack"
+import type { YouTrackIssue } from "../services/youtrack"
 import { useAuth } from "../contexts/AuthContext"
 import { 
   Send, 
@@ -32,6 +33,60 @@ interface TicketFormData {
 interface InitiativeOption {
   name: string
   value: string
+}
+
+interface NamedOption {
+  name: string
+}
+
+function isNamedOption(value: unknown): value is NamedOption {
+  return Boolean(
+    value &&
+    typeof value === "object" &&
+    "name" in value &&
+    typeof value.name === "string"
+  )
+}
+
+function getTypeName(issue: YouTrackIssue): string | null {
+  const typeField = issue.customFields?.find((field) => field.name === "Type")
+  const value = typeField?.value
+
+  if (!value || typeof value !== "object" || !("name" in value) || typeof value.name !== "string") {
+    return null
+  }
+
+  return value.name
+}
+
+function extractTicketNumber(data: unknown): string | null {
+  if (!data) {
+    return null
+  }
+
+  if (Array.isArray(data)) {
+    const firstItem = data[0]
+    if (
+      firstItem &&
+      typeof firstItem === "object" &&
+      "idReadable" in firstItem &&
+      typeof firstItem.idReadable === "string"
+    ) {
+      return firstItem.idReadable
+    }
+    return null
+  }
+
+  if (typeof data === "object") {
+    if ("idReadable" in data && typeof data.idReadable === "string") {
+      return data.idReadable
+    }
+    if ("id" in data && typeof data.id === "string") {
+      return data.id
+    }
+  }
+
+  return null
 }
 
 function RequestPageContent() {
@@ -102,9 +157,15 @@ function RequestPageContent() {
       return
     }
 
-    const issue = response.data as any
-    const typeField = issue.customFields?.find((f: any) => f.name === 'Type')
-    const isProject = typeField?.value?.name === 'Project'
+    if (Array.isArray(response.data)) {
+      setUrlValidation('invalid')
+      setUrlValidationMessage(`${issueId} could not be validated`)
+      return
+    }
+
+    const issue = response.data
+    const issueType = getTypeName(issue)
+    const isProject = issueType === "Project"
 
     if (isProject) {
       setUrlValidation('valid')
@@ -122,37 +183,37 @@ function RequestPageContent() {
         setLoadingInitiatives(true)
         const response = await youTrackService.getCustomFieldValues('Initiative')
         
-        if (response && Array.isArray(response) && response.length > 0) {
-          const initiativeOptions = response.map((item: any) => ({
-            name: item.name,
-            value: item.name.toLowerCase().replace(/\s+/g, '-')
-          }))
-          setInitiatives(initiativeOptions)
-        } else if (response.data && Array.isArray(response.data)) {
-          const initiativeOptions = response.data.map((item: any) => ({
-            name: item.name,
-            value: item.name.toLowerCase().replace(/\s+/g, '-')
-          }))
-          setInitiatives(initiativeOptions)
-        } else {
-          // Fallback to hardcoded list if API fails
-          console.warn('Failed to fetch initiatives from YouTrack, using fallback')
-          setInitiatives([
-            { name: 'Infrastructure', value: 'infrastructure' },
-            { name: 'Offboarding', value: 'offboarding' },
-            { name: 'Onboarding', value: 'onboarding' },
-            { name: 'Transactions', value: 'transactions' },
-            { name: 'Enablement', value: 'enablement' },
-            { name: 'Support', value: 'support' },
-            { name: 'Brokerage', value: 'brokerage' },
-            { name: 'Core Operations', value: 'core-operations' },
-            { name: 'Zapier Support', value: 'zapier-support' },
-            { name: 'Marketing', value: 'marketing' },
-            { name: 'Legal', value: 'legal' },
-            { name: 'HR', value: 'hr' },
-            { name: 'Finance', value: 'finance' }
-          ])
+        if (response.data && Array.isArray(response.data)) {
+          const initiativeOptions = response.data
+            .filter(isNamedOption)
+            .map((item) => ({
+              name: item.name,
+              value: item.name.toLowerCase().replace(/\s+/g, '-')
+            }))
+
+          if (initiativeOptions.length > 0) {
+            setInitiatives(initiativeOptions)
+            return
+          }
         }
+
+        // Fallback to hardcoded list if API fails
+        console.warn('Failed to fetch initiatives from YouTrack, using fallback')
+        setInitiatives([
+          { name: 'Infrastructure', value: 'infrastructure' },
+          { name: 'Offboarding', value: 'offboarding' },
+          { name: 'Onboarding', value: 'onboarding' },
+          { name: 'Transactions', value: 'transactions' },
+          { name: 'Enablement', value: 'enablement' },
+          { name: 'Support', value: 'support' },
+          { name: 'Brokerage', value: 'brokerage' },
+          { name: 'Core Operations', value: 'core-operations' },
+          { name: 'Zapier Support', value: 'zapier-support' },
+          { name: 'Marketing', value: 'marketing' },
+          { name: 'Legal', value: 'legal' },
+          { name: 'HR', value: 'hr' },
+          { name: 'Finance', value: 'finance' }
+        ])
       } catch (error) {
         console.error('Error fetching initiatives:', error)
         // Use fallback list
@@ -322,21 +383,7 @@ function RequestPageContent() {
       let newTicketNumber = null
       
       if (response.data) {
-        // Cast to any to handle different possible response formats from YouTrack
-        const responseData = response.data as any
-        
-        // Check if response.data has idReadable directly (single issue response)
-        if (responseData.idReadable) {
-          newTicketNumber = responseData.idReadable
-        }
-        // Check if response.data is an array (multiple issues response)
-        else if (Array.isArray(responseData) && responseData.length > 0) {
-          newTicketNumber = responseData[0]?.idReadable
-        }
-        // Check if response.data has an id field that we can use
-        else if (responseData.id) {
-          newTicketNumber = responseData.id
-        }
+        newTicketNumber = extractTicketNumber(response.data)
       }
       
       // If we couldn't extract the real ticket number, generate a placeholder

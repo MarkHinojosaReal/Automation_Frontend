@@ -34,7 +34,7 @@ async function countDoneAutomationTasks() {
     
     if (response.error) {
       console.error('❌ Error:', response.error)
-      return
+      return 0
     }
     
     if (response.data && Array.isArray(response.data)) {
@@ -43,7 +43,8 @@ async function countDoneAutomationTasks() {
       response.data.forEach((task, index) => {
         console.log(`${index + 1}. ${task.idReadable}: ${task.summary}`)
         console.log(`   State: ${task.state?.name}`)
-        console.log(`   Tags: ${(task as any).tags?.map((tag: any) => tag.name).join(', ') || 'None'}`)
+        const tagNames = (task.tags || []).map((tag) => tag.name).join(', ')
+        console.log(`   Tags: ${tagNames || 'None'}`)
       })
       return response.data.length
     } else {
@@ -56,6 +57,13 @@ async function countDoneAutomationTasks() {
   }
 }
 
+declare global {
+  interface Window {
+    testYouTrack: () => Promise<boolean>
+    countDoneAutomationTasks: () => Promise<number>
+  }
+}
+
 // Test functions that can be called from browser console
-;(window as any).testYouTrack = testYouTrackConnection
-;(window as any).countDoneAutomationTasks = countDoneAutomationTasks
+window.testYouTrack = testYouTrackConnection
+window.countDoneAutomationTasks = countDoneAutomationTasks

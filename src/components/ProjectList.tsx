@@ -1,6 +1,6 @@
 import React, { useState } from "react"
 import { ProjectCard } from "./ProjectCard"
-import { Search, Filter, SortAsc, ArrowUpDown, X, SlidersHorizontal, ChevronDown } from "lucide-react"
+import { Search, ArrowUpDown, X, SlidersHorizontal, ChevronDown } from "lucide-react"
 import type { Ticket } from "../types"
 
 interface ProjectListProps {
@@ -11,6 +11,7 @@ interface ProjectListProps {
 
 export function ProjectList({ projects, compact = false, showFilters = false }: ProjectListProps) {
   const [showFilterSidebar, setShowFilterSidebar] = useState(false)
+  const [showSortSidebar, setShowSortSidebar] = useState(false)
   const [searchTerm, setSearchTerm] = useState("")
   const [selectedStates, setSelectedStates] = useState<string[]>([])
   const [stateFilterMode, setStateFilterMode] = useState<"include" | "exclude">("include")
@@ -202,9 +203,12 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
     setSelectedInitiatives([])
     setInitiativeFilterMode("include")
     setIncludeNoInitiative(false)
+    setSearchTerm("")
+  }
+
+  const clearSort = () => {
     setSortBy("updated")
     setSortOrder("desc")
-    setSearchTerm("")
   }
 
   const activeFilterCount = [
@@ -216,14 +220,27 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
     searchTerm !== ""
   ].filter(Boolean).length
 
+  const isDefaultSort = sortBy === "updated" && sortOrder === "desc"
+  const sortLabel = sortBy === "updated"
+    ? "Last Updated"
+    : sortBy === "created"
+    ? "Date Created"
+    : "Priority"
+
   return (
     <div className="relative">
       {showFilters && (
         <>
-          {/* Filter Toggle Button & Search Bar */}
+          {/* Filter, Sort and Search */}
           <div className="mb-6 flex items-center gap-3">
             <button
-              onClick={() => setShowFilterSidebar(!showFilterSidebar)}
+              onClick={() => {
+                const isOpening = !showFilterSidebar
+                setShowFilterSidebar(isOpening)
+                if (isOpening) {
+                  setShowSortSidebar(false)
+                }
+              }}
               className="bg-ocean-500 hover:bg-ocean-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 whitespace-nowrap focus:outline-none focus:ring-0 shadow-none hover:shadow-none"
             >
               <SlidersHorizontal className="w-4 h-4" />
@@ -231,6 +248,24 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
               {activeFilterCount > 0 && (
                 <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-semibold">
                   {activeFilterCount}
+                </span>
+              )}
+            </button>
+            <button
+              onClick={() => {
+                const isOpening = !showSortSidebar
+                setShowSortSidebar(isOpening)
+                if (isOpening) {
+                  setShowFilterSidebar(false)
+                }
+              }}
+              className="bg-ocean-500 hover:bg-ocean-600 text-white px-4 py-2 rounded-lg font-medium transition-colors flex items-center space-x-2 whitespace-nowrap focus:outline-none focus:ring-0 shadow-none hover:shadow-none"
+            >
+              <ArrowUpDown className="w-4 h-4" />
+              <span>Sort</span>
+              {!isDefaultSort && (
+                <span className="bg-white/20 px-2 py-0.5 rounded-full text-xs font-semibold">
+                  Custom
                 </span>
               )}
             </button>
@@ -618,35 +653,6 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
                     </>
                   )}
 
-                  {/* Sorting */}
-                  <div className="pt-4 border-t border-white/20">
-                    <label className="block text-sm font-semibold text-breeze-800 mb-3">
-            <div className="flex items-center space-x-2">
-                        <ArrowUpDown className="w-4 h-4" />
-                        <span>Sort By</span>
-                      </div>
-                    </label>
-                    <div className="space-y-3">
-              <select
-                value={sortBy}
-                onChange={(e) => setSortBy(e.target.value)}
-                        className="input-glass w-full px-3 py-2 text-sm text-breeze-800"
-              >
-                <option value="updated">Last Updated</option>
-                <option value="created">Date Created</option>
-                <option value="priority">Priority</option>
-              </select>
-              <select
-                value={sortOrder}
-                onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
-                        className="input-glass w-full px-3 py-2 text-sm text-breeze-800"
-              >
-                <option value="desc">Descending</option>
-                <option value="asc">Ascending</option>
-              </select>
-            </div>
-          </div>
-          
                   {/* Results Summary */}
                   <div className="pt-4 border-t border-white/20">
                     <div className="bg-white/50 rounded-lg p-3 text-sm text-breeze-700">
@@ -657,6 +663,72 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
                   </div>
           </div>
         </div>
+            </>
+          )}
+
+          {showSortSidebar && (
+            <>
+              <div
+                className="fixed inset-0 bg-black/50 z-40"
+                onClick={() => setShowSortSidebar(false)}
+              />
+
+              <div className="fixed right-0 top-0 h-full w-80 bg-gradient-to-br from-breeze-100 via-ocean-50 to-accent-50 shadow-2xl z-50 overflow-y-auto">
+                <div className="sticky top-0 bg-ocean-600 text-white p-4 flex items-center justify-between">
+                  <div className="flex items-center space-x-2">
+                    <ArrowUpDown className="w-5 h-5" />
+                    <h3 className="font-semibold text-lg">Sort Options</h3>
+                  </div>
+                  <button
+                    onClick={() => setShowSortSidebar(false)}
+                    className="hover:bg-white/20 p-1 rounded transition-colors"
+                  >
+                    <X className="w-5 h-5" />
+                  </button>
+                </div>
+
+                <div className="p-4 space-y-6">
+                  <div className="bg-white/50 rounded-lg p-3 text-sm text-breeze-700">
+                    <p className="font-semibold">Current sort: {sortLabel}</p>
+                    <p className="text-xs text-breeze-600 mt-1">
+                      Order: {sortOrder === "desc" ? "Descending" : "Ascending"}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    <label className="block text-sm font-semibold text-breeze-800">
+                      Sort By
+                    </label>
+                    <select
+                      value={sortBy}
+                      onChange={(e) => setSortBy(e.target.value)}
+                      className="input-glass w-full px-3 py-2 text-sm text-breeze-800"
+                    >
+                      <option value="updated">Last Updated</option>
+                      <option value="created">Date Created</option>
+                      <option value="priority">Priority</option>
+                    </select>
+                    <select
+                      value={sortOrder}
+                      onChange={(e) => setSortOrder(e.target.value as "asc" | "desc")}
+                      className="input-glass w-full px-3 py-2 text-sm text-breeze-800"
+                    >
+                      <option value="desc">Descending</option>
+                      <option value="asc">Ascending</option>
+                    </select>
+                  </div>
+
+                  {!isDefaultSort && (
+                    <button
+                      onClick={clearSort}
+                      className="px-3 py-1.5 bg-priority-high/10 hover:bg-priority-high/20 text-priority-high rounded text-xs font-medium transition-colors flex items-center space-x-1.5"
+                    >
+                      <X className="w-3 h-3" />
+                      <span>Reset Sort</span>
+                    </button>
+                  )}
+                </div>
+              </div>
             </>
           )}
         </>
