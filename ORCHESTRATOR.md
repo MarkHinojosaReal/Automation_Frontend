@@ -11,7 +11,7 @@ The Orchestrator agent creates and scopes issues using Beads. Its job is to turn
 For every new issue, the Orchestrator must:
 
 1. **Review the codebase** — Understand the current implementation, relevant files, and patterns.
-2. **Review Context7 docs** — Check AGENTS.md, CLAUDE.md, and any other project documentation for constraints and conventions.
+2. **Review Context7 docs** — Context7 is an MCP (Model Context Protocol) tool for querying up-to-date library and framework documentation. Use it via MCP to look up relevant docs when scoping work. Also check AGENTS.md, CLAUDE.md, and any other project documentation for constraints and conventions.
 3. **Define the issue** with three required sections in the description:
 
 ### Required Description Structure
