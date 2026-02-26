@@ -2,6 +2,7 @@ import React, { useState, useEffect } from "react"
 import { Layout } from "../components/Layout"
 import { AuthGuard } from "../components/AuthGuard"
 import { FormField, TextInput, TextArea, Select } from "../components/FormField"
+import { ProjectPicker } from "../components/ProjectPicker"
 import { SuccessModal } from "../components/SuccessModal"
 import { youTrackService } from "../services/youtrack"
 import type { YouTrackIssue } from "../services/youtrack"
@@ -17,6 +18,12 @@ import {
   X
 } from "lucide-react"
 
+interface SelectedProject {
+  id: string
+  summary: string
+  initiative?: string | null
+}
+
 interface TicketFormData {
   priority: string
   type: string
@@ -28,6 +35,7 @@ interface TicketFormData {
   initiative: string
   targetDate: string
   links: Array<{ name: string; url: string }>
+  selectedProject: SelectedProject | null
 }
 
 interface InitiativeOption {
@@ -102,7 +110,8 @@ function RequestPageContent() {
     manualTimeInvestment: "",
     initiative: "",
     targetDate: "",
-    links: []
+    links: [],
+    selectedProject: null
   })
   
   const [isSubmitting, setIsSubmitting] = useState(false)
@@ -313,18 +322,15 @@ function RequestPageContent() {
   const validateForm = () => {
     const newErrors: Record<string, string> = {}
     
-    // Email is auto-populated from user account, no need to validate
     if (formData.type === 'update-automation') {
-      if (!formData.existingProjectUrl.trim()) {
-        newErrors.existingProjectUrl = "Existing project URL is required"
-      } else if (urlValidation === 'invalid') {
-        newErrors.existingProjectUrl = urlValidationMessage
-      } else if (urlValidation !== 'valid') {
-        newErrors.existingProjectUrl = "Please wait for URL validation to complete"
+      if (!formData.selectedProject) {
+        newErrors.selectedProject = "Please select an existing project"
       }
     }
     if (!formData.projectName.trim()) {
-      newErrors.projectName = "Project name is required"
+      newErrors.projectName = formData.type === 'update-automation'
+        ? "Enhancement name is required"
+        : "Project name is required"
     }
     if (!formData.projectDescription.trim()) {
       newErrors.projectDescription = "Project description is required"
@@ -359,12 +365,15 @@ function RequestPageContent() {
     
     try {
       const isEnhancement = formData.type === 'update-automation'
+      const projectUrl = isEnhancement && formData.selectedProject
+        ? `https://realbrokerage.youtrack.cloud/issue/${formData.selectedProject.id}`
+        : ''
+      const summary = formData.projectName
 
-      // Create ticket in YouTrack ATOP project with exact field mapping
       const issueData = {
-        summary: formData.projectName,
-        description: `### Project Description\n${formData.projectDescription}${isEnhancement ? `\n\n**Existing Project:** ${formData.existingProjectUrl}` : ''}\n\n### What Needs to Be Done\n* Task Breakdown\n\n### Completion Criteria\n* \n\n**Manual Time Investment:**\n${formData.manualTimeInvestment}\n\n**Priority:** ${formData.priority}`,
-        project: '0-5', // ATOP project internal ID
+        summary,
+        description: `### Project Description\n${formData.projectDescription}${isEnhancement && projectUrl ? `\n\n**Existing Project:** ${projectUrl}` : ''}\n\n### What Needs to Be Done\n* Task Breakdown\n\n### Completion Criteria\n* \n\n**Manual Time Investment:**\n${formData.manualTimeInvestment}\n\n**Priority:** ${formData.priority}`,
+        project: '0-5',
         state: 'Needs Scoping',
         requestor: formData.email,
         initiative: formData.initiative,
@@ -431,9 +440,9 @@ function RequestPageContent() {
       manualTimeInvestment: "",
       initiative: "",
       targetDate: "",
-      links: []
+      links: [],
+      selectedProject: null
     })
-    // Reset link editing state
     setEditingLinkIndex(null)
     setTempLinkData({ name: '', url: '' })
     setUrlValidation('idle')
@@ -496,30 +505,45 @@ function RequestPageContent() {
                     </FormField>
                   </div>
 
-                  {formData.type === 'update-automation' && (
-                    <FormField label="Existing Project URL" id="existingProjectUrl" required error={errors.existingProjectUrl}>
+                  {formData.type === 'update-automation' ? (
+                    <>
+                      <FormField label="Existing Project" id="selectedProject" required error={errors.selectedProject}>
+                        <ProjectPicker
+                          value={formData.selectedProject}
+                          onChange={(project) =>
+                            setFormData((prev) => ({
+                              ...prev,
+                              selectedProject: project,
+                              initiative: project?.initiative
+                                ? project.initiative.toLowerCase().replace(/\s+/g, '-')
+                                : prev.initiative
+                            }))
+                          }
+                          error={errors.selectedProject}
+                        />
+                      </FormField>
+
+                      <FormField label="Enhancement Name" id="projectName" required error={errors.projectName}>
+                        <TextInput
+                          id="projectName"
+                          name="projectName"
+                          placeholder="What should this enhancement be called?"
+                          value={formData.projectName}
+                          onChange={handleInputChange}
+                          required
+                        />
+                      </FormField>
+                    </>
+                  ) : (
+                    <FormField label="Project Name" id="projectName" required error={errors.projectName}>
                       <TextInput
-                        id="existingProjectUrl"
-                        name="existingProjectUrl"
-                        type="url"
-                        placeholder="https://realbrokerage.youtrack.cloud/issue/ATOP-1620"
-                        value={formData.existingProjectUrl}
+                        id="projectName"
+                        name="projectName"
+                        placeholder="Name of the project or automation..."
+                        value={formData.projectName}
                         onChange={handleInputChange}
-                        onBlur={() => validateExistingProjectUrl(formData.existingProjectUrl)}
                         required
                       />
-                      {urlValidation === 'validating' && (
-                        <p className="mt-1.5 text-sm text-breeze-500 flex items-center space-x-1">
-                          <span className="inline-block w-3 h-3 border-2 border-breeze-400 border-t-transparent rounded-full animate-spin" />
-                          <span>{urlValidationMessage}</span>
-                        </p>
-                      )}
-                      {urlValidation === 'valid' && (
-                        <p className="mt-1.5 text-sm text-green-600 font-medium">✓ {urlValidationMessage}</p>
-                      )}
-                      {urlValidation === 'invalid' && !errors.existingProjectUrl && (
-                        <p className="mt-1.5 text-sm text-red-500">{urlValidationMessage}</p>
-                      )}
                     </FormField>
                   )}
 
@@ -533,17 +557,6 @@ function RequestPageContent() {
                       onChange={handleInputChange}
                       required
                       disabled
-                    />
-                  </FormField>
-
-                  <FormField label="Project Name" id="projectName" required error={errors.projectName}>
-                    <TextInput
-                      id="projectName"
-                      name="projectName"
-                      placeholder="Name of the project or automation..."
-                      value={formData.projectName}
-                      onChange={handleInputChange}
-                      required
                     />
                   </FormField>
 
