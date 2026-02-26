@@ -48,13 +48,18 @@ bd sync               # Sync beads with git
 
 ## Linear Sync
 
-Beads issues are **automatically synced to Linear on deploy** — after the `Backend Server CI` workflow completes successfully on a push to `main`. The sync is a reusable workflow (`.github/workflows/sync-beads-linear.yml`) dispatched by `deploy.yml` via `workflow_call`. It runs `scripts/sync-beads-linear.mjs` which:
+Beads issues are **automatically synced to Linear** via two triggers:
+
+1. **On beads change** — when `.beads/issues.jsonl` is pushed to `main` (e.g. PR merged), the sync runs directly
+2. **On deploy** — after `Backend Server CI` completes on a push to `main`, `deploy.yml` calls the sync via `workflow_call`
+
+The sync workflow (`.github/workflows/sync-beads-linear.yml`) runs `scripts/sync-beads-linear.mjs` which:
 
 - Creates new Linear issues for any beads not yet in Linear
 - Updates title, status, and priority for changed beads
 - Matches beads to Linear issues via the `[atfe-xxx]` prefix in the title
 
-**No developer action required** — just use `bd` commands normally and push. Linear stays in sync after each deploy.
+**No developer action required** — just use `bd` commands normally and push. Linear stays in sync.
 
 ### Required GitHub Secrets
 

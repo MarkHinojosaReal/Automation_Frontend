@@ -67,8 +67,9 @@ function registerYouTrackRoutes(app, makeYouTrackRequest, options = {}) {
       const endpoint = `/api/admin/projects/${projectId}/customFields?fields=field(fieldType(valueType),name),bundle(values(name))&query=${encodeURIComponent(`field: {${fieldName}}`)}`;
 
       const data = await makeYouTrackRequest(endpoint);
-      if (data && data.length > 0 && data[0].bundle && data[0].bundle.values) {
-        res.json(data[0].bundle.values);
+      const match = Array.isArray(data) ? data.find(f => f.field && f.field.name === fieldName) : null;
+      if (match && match.bundle && match.bundle.values) {
+        res.json(match.bundle.values);
       } else {
         res.json([]);
       }
@@ -83,7 +84,8 @@ function registerYouTrackRoutes(app, makeYouTrackRequest, options = {}) {
         const { issueId } = req.params;
         const { name } = req.body;
 
-        const tags = await makeYouTrackRequest(`/api/tags?fields=id,name&query=${encodeURIComponent(name)}`);
+        // Fetch all visible tags and filter client-side; the query= param causes 400 on some YouTrack instances
+        const tags = await makeYouTrackRequest(`/api/tags?fields=id,name&$top=200`);
         const tag = Array.isArray(tags) ? tags.find((item) => item.name === name) : null;
 
         if (!tag) {
