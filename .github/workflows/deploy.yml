@@ -29,3 +29,9 @@ jobs:
             [ -f "$file" ] || continue
             node --check "$file"
           done
+
+  sync-linear:
+    needs: backend-smoke
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    uses: ./.github/workflows/sync-beads-linear.yml
+    secrets: inherit
