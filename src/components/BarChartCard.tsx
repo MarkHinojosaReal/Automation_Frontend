@@ -1,5 +1,5 @@
-import React from "react"
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, Cell, LabelList } from "recharts"
+import React, { useState } from "react"
+import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer, LabelList } from "recharts"
 import type { ChartData } from "../types"
 
 interface BarChartCardProps {
@@ -8,9 +8,19 @@ interface BarChartCardProps {
   onBarClick?: (name: string) => void
 }
 
+interface BarShapeProps {
+  x?: number
+  y?: number
+  width?: number
+  height?: number
+  index?: number
+}
+
 export function BarChartCard({ title, data, onBarClick }: BarChartCardProps) {
+  const [activeIndex, setActiveIndex] = useState<number | null>(null)
+
   return (
-    <div className="card">
+    <div className="glass-card p-4 sm:p-6">
       <h3 className="text-xl font-bold text-breeze-800 mb-6">{title}</h3>
       <div className="h-72">
         <ResponsiveContainer width="100%" height="100%">
@@ -42,10 +52,28 @@ export function BarChartCard({ title, data, onBarClick }: BarChartCardProps) {
             />
             <Bar
               dataKey="value"
-              radius={[4, 4, 0, 0]}
               maxBarSize={60}
               cursor={onBarClick ? 'pointer' : 'default'}
               onClick={onBarClick ? (entry) => onBarClick(entry.name) : undefined}
+              onMouseEnter={(_: unknown, index: number) => setActiveIndex(index)}
+              onMouseLeave={() => setActiveIndex(null)}
+              shape={(props: unknown) => {
+                const { x = 0, y = 0, width = 0, height = 0, index = 0 } = props as BarShapeProps
+                const isActive = index === activeIndex
+                const pop = isActive ? 4 : 0
+                return (
+                  <rect
+                    x={x}
+                    y={y - pop}
+                    width={width}
+                    height={height + pop}
+                    fill={data[index]?.color ?? '#888'}
+                    fillOpacity={isActive ? 1 : 0.9}
+                    rx={4}
+                    ry={4}
+                  />
+                )
+              }}
             >
               <LabelList
                 dataKey="value"
@@ -54,13 +82,6 @@ export function BarChartCard({ title, data, onBarClick }: BarChartCardProps) {
                 fontSize={12}
                 fontWeight={600}
               />
-              {data.map((entry, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={entry.color}
-                  fillOpacity={0.9}
-                />
-              ))}
             </Bar>
           </BarChart>
         </ResponsiveContainer>
@@ -68,4 +89,3 @@ export function BarChartCard({ title, data, onBarClick }: BarChartCardProps) {
     </div>
   )
 }
-

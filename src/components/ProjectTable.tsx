@@ -1,8 +1,12 @@
 import React from "react"
+import { ChevronUp, ChevronDown, ChevronsUpDown } from "lucide-react"
 import type { Ticket } from "../types"
 
 interface ProjectTableProps {
   projects: Ticket[]
+  sortColumn?: string
+  sortOrder?: "asc" | "desc"
+  onSort?: (column: string) => void
 }
 
 function getYouTrackUrl(idReadable: string): string {
@@ -49,7 +53,18 @@ function normalizePriority(priorityName: string): string {
   return priorityName.replace(/^\d+\s*-\s*/, '')
 }
 
-export function ProjectTable({ projects }: ProjectTableProps) {
+const COLUMNS: { label: string; key: string }[] = [
+  { label: "Issue ID",   key: "idReadable" },
+  { label: "Summary",    key: "summary" },
+  { label: "Status",     key: "state" },
+  { label: "Priority",   key: "priority" },
+  { label: "Assignee",   key: "assignee" },
+  { label: "Initiative", key: "initiative" },
+  { label: "Reporter",   key: "reporter" },
+  { label: "Created",    key: "created" },
+]
+
+export function ProjectTable({ projects, sortColumn, sortOrder, onSort }: ProjectTableProps) {
   if (projects.length === 0) {
     return (
       <div className="text-center py-12">
@@ -64,14 +79,27 @@ export function ProjectTable({ projects }: ProjectTableProps) {
         <table className="min-w-full table-auto">
           <thead>
             <tr className="bg-ocean-500/10 border-b border-ocean-200">
-              {["Issue ID", "Summary", "Status", "Priority", "Assignee", "Initiative", "Reporter", "Created"].map(col => (
-                <th
-                  key={col}
-                  className="px-4 py-3 text-left text-xs font-semibold text-ocean-700 uppercase tracking-wider whitespace-nowrap"
-                >
-                  {col}
-                </th>
-              ))}
+              {COLUMNS.map(({ label, key }) => {
+                const isActive = sortColumn === key
+                return (
+                  <th
+                    key={key}
+                    onClick={() => onSort?.(key)}
+                    className="px-4 py-3 text-left text-xs font-semibold text-ocean-700 uppercase tracking-wider whitespace-nowrap cursor-pointer select-none hover:bg-ocean-500/20 transition-colors"
+                  >
+                    <span className="flex items-center gap-1">
+                      {label}
+                      {isActive ? (
+                        sortOrder === "asc"
+                          ? <ChevronUp className="w-3.5 h-3.5 text-ocean-600" />
+                          : <ChevronDown className="w-3.5 h-3.5 text-ocean-600" />
+                      ) : (
+                        <ChevronsUpDown className="w-3.5 h-3.5 text-ocean-300" />
+                      )}
+                    </span>
+                  </th>
+                )
+              })}
             </tr>
           </thead>
           <tbody className="divide-y divide-breeze-100">

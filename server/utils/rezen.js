@@ -377,7 +377,26 @@ function createDownloadAgentHandler() {
   };
 }
 
+function createValidateTransactionHandler() {
+  return async function handleValidateTransaction(req, res) {
+    try {
+      const { transactionId } = req.body;
+      if (!transactionId || typeof transactionId !== 'string' || !transactionId.trim()) {
+        return res.status(400).json({ error: 'transactionId is required' });
+      }
+      const details = await getTransactionDetails(transactionId.trim());
+      res.json({ valid: true, transactionId: details.id, address: details.address });
+    } catch (error) {
+      if (error.statusCode === 404 || (error.message && error.message.includes('404'))) {
+        return res.status(404).json({ valid: false, error: 'Transaction not found' });
+      }
+      res.status(500).json({ valid: false, error: error.message });
+    }
+  };
+}
+
 module.exports = {
   createDownloadTransactionHandler,
   createDownloadAgentHandler,
+  createValidateTransactionHandler,
 };

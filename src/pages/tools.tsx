@@ -157,6 +157,9 @@ function ToolsPageContent() {
   const [rezenError, setRezenError] = useState<string>("")
   const [rezenStatus, setRezenStatus] = useState<string>("")
   const [rezenResults, setRezenResults] = useState<TransactionResult[] | null>(null)
+  const [rezenValidation, setRezenValidation] = useState<'idle' | 'loading' | 'valid' | 'invalid'>('idle')
+  const [rezenValidatedAddress, setRezenValidatedAddress] = useState<string>("")
+  const rezenValidationRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   // KB Search state
   const [kbQuery, setKbQuery] = useState<string>("")
@@ -425,8 +428,9 @@ function ToolsPageContent() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || `HTTP error! status: ${response.status}`)
+        let msg = `HTTP error! status: ${response.status}`
+        try { const e = await response.json(); msg = e.error || msg } catch { /* non-JSON error body */ }
+        throw new Error(msg)
       }
 
       const data = await response.json()
@@ -474,8 +478,9 @@ function ToolsPageContent() {
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || `Search failed: ${response.status}`)
+        let msg = `Search failed: ${response.status}`
+        try { const e = await response.json(); msg = e.error || msg } catch { /* non-JSON error body */ }
+        throw new Error(msg)
       }
 
       const data = await response.json() as KBSearchResult
@@ -507,6 +512,47 @@ function ToolsPageContent() {
       if (kbDebounceRef.current) clearTimeout(kbDebounceRef.current)
     }
   }, [kbQuery, selectedTool, executeKBSearch])
+
+  // Auto-validate a single transaction UUID as the user types
+  const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+  useEffect(() => {
+    if (rezenValidationRef.current) clearTimeout(rezenValidationRef.current)
+
+    const id = rezenTransactionId.trim()
+    // Only auto-validate single UUIDs (not comma-separated lists)
+    if (!id || !UUID_RE.test(id)) {
+      setRezenValidation('idle')
+      setRezenValidatedAddress("")
+      return
+    }
+
+    setRezenValidation('loading')
+    rezenValidationRef.current = setTimeout(async () => {
+      try {
+        const res = await fetch('/api/rezen/validate-transaction', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          credentials: 'include',
+          body: JSON.stringify({ transactionId: id }),
+        })
+        const data = await res.json()
+        if (res.ok && data.valid) {
+          setRezenValidation('valid')
+          setRezenValidatedAddress(data.address || "")
+        } else {
+          setRezenValidation('invalid')
+          setRezenValidatedAddress("")
+        }
+      } catch {
+        setRezenValidation('invalid')
+        setRezenValidatedAddress("")
+      }
+    }, 600)
+
+    return () => {
+      if (rezenValidationRef.current) clearTimeout(rezenValidationRef.current)
+    }
+  }, [rezenTransactionId])
 
   const stripHtml = (html: string): string => {
     const div = document.createElement('div')
@@ -571,6 +617,9 @@ function ToolsPageContent() {
     setRezenResults(null)
     setRezenStatus(isTransaction ? "Fetching transaction files..." : "Fetching agent transactions...")
 
+    const controller = new AbortController()
+    const timeoutId = setTimeout(() => controller.abort(), 300_000) // 5-minute timeout
+
     try {
       const endpoint = isTransaction ? '/api/rezen/download-transaction' : '/api/rezen/download-agent'
       const body = isTransaction
@@ -581,12 +630,14 @@ function ToolsPageContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         credentials: 'include',
+        signal: controller.signal,
         body: JSON.stringify(body),
       })
 
       if (!response.ok) {
-        const errorData = await response.json()
-        throw new Error(errorData.error || `Download failed: ${response.status}`)
+        let msg = `Download failed: ${response.status}`
+        try { const e = await response.json(); msg = e.error || msg } catch { /* non-JSON error body */ }
+        throw new Error(msg)
       }
 
       const fileCount = response.headers.get('X-File-Count')
@@ -614,9 +665,14 @@ function ToolsPageContent() {
       setRezenResults(txResults)
       setRezenStatus(`Downloaded ${fileCount || '?'} files successfully`)
     } catch (error) {
-      setRezenError(error instanceof Error ? error.message : 'An error occurred')
+      if (error instanceof DOMException && error.name === 'AbortError') {
+        setRezenError("Request timed out after 5 minutes. Try using a lifecycle filter or fewer transaction IDs.")
+      } else {
+        setRezenError(error instanceof Error ? error.message : 'An error occurred')
+      }
       setRezenStatus("")
     } finally {
+      clearTimeout(timeoutId)
       setRezenDownloading(false)
     }
   }
@@ -1302,7 +1358,7 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
                 </label>
                 <div className="flex rounded-lg overflow-hidden border border-breeze-200">
                   <button
-                    onClick={() => setRezenLookupMode('transaction')}
+                    onClick={() => { setRezenLookupMode('transaction'); setRezenValidation('idle'); setRezenValidatedAddress("") }}
                     className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
                       rezenLookupMode === 'transaction'
                         ? 'bg-ocean-500 text-white'
@@ -1339,9 +1395,29 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
                     className="w-full px-3 py-2 bg-white border border-breeze-200 rounded-lg text-breeze-900 placeholder-breeze-400 focus:outline-none focus:ring-2 focus:ring-ocean-400/50 focus:border-ocean-400/50"
                     onKeyDown={(e) => e.key === 'Enter' && !rezenDownloading && handleRezenDownload()}
                   />
-                  <p className="text-xs text-breeze-400 mt-1">
-                    UUID format, e.g. 1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d
-                  </p>
+                  {rezenValidation === 'idle' && (
+                    <p className="text-xs text-breeze-400 mt-1">
+                      UUID format, e.g. 1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+                    </p>
+                  )}
+                  {rezenValidation === 'loading' && (
+                    <p className="text-xs text-breeze-400 mt-1 flex items-center space-x-1">
+                      <Loader2 className="w-3 h-3 animate-spin" />
+                      <span>Validating transaction...</span>
+                    </p>
+                  )}
+                  {rezenValidation === 'valid' && (
+                    <p className="text-xs text-status-done mt-1 flex items-center space-x-1">
+                      <CheckCircle2 className="w-3 h-3" />
+                      <span>{rezenValidatedAddress}</span>
+                    </p>
+                  )}
+                  {rezenValidation === 'invalid' && (
+                    <p className="text-xs text-priority-high mt-1 flex items-center space-x-1">
+                      <AlertCircle className="w-3 h-3" />
+                      <span>Transaction not found</span>
+                    </p>
+                  )}
                 </div>
               )}
 
@@ -1382,11 +1458,11 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
               )}
 
               {/* Download Button */}
-              <div className="flex items-end">
+              <div className="flex flex-col space-y-2">
                 <button
                   onClick={handleRezenDownload}
                   disabled={rezenDownloading}
-                  className="btn-primary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  className="btn-primary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed self-start"
                 >
                   {rezenDownloading ? (
                     <>
@@ -1400,6 +1476,7 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
                     </>
                   )}
                 </button>
+                <p className="text-xs text-breeze-400">Large downloads may take several minutes. Times out after 5 minutes.</p>
               </div>
 
               {/* Status Message */}

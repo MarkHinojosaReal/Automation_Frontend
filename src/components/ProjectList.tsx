@@ -1,9 +1,10 @@
 import React, { useState } from "react"
 import { ProjectCard } from "./ProjectCard"
 import { ProjectTable } from "./ProjectTable"
-import { Search, ArrowUpDown, X, SlidersHorizontal, ChevronDown, ExternalLink, LayoutGrid, Table2 } from "lucide-react"
+import { Search, ArrowUpDown, X, SlidersHorizontal, ChevronDown, ExternalLink, LayoutGrid, Table2, Download } from "lucide-react"
 import type { Ticket } from "../types"
 import { buildYouTrackUrl } from "../utils/buildYouTrackQuery"
+import { exportProjectsToCsv } from "../utils/csvExport"
 
 interface ProjectListProps {
   projects: Ticket[]
@@ -30,6 +31,15 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
   const [includeNoInitiative, setIncludeNoInitiative] = useState(false)
   const [sortBy, setSortBy] = useState("updated")
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc")
+  const [tableSort, setTableSort] = useState<{ column: string; order: "asc" | "desc" } | null>(null)
+
+  const handleTableSort = (column: string) => {
+    setTableSort(prev =>
+      prev?.column === column
+        ? { column, order: prev.order === "asc" ? "desc" : "asc" }
+        : { column, order: "asc" }
+    )
+  }
   
   // Collapsible filter sections
   const [expandedFilters, setExpandedFilters] = useState<Set<string>>(new Set())
@@ -161,8 +171,45 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
       return matchesSearch && matchesState && matchesPriority && matchesRequestor && matchesAssignee && matchesInitiative
     })
     .sort((a, b) => {
+      const PRIORITY_ORDER: Record<string, number> = { Urgent: 5, High: 4, Medium: 3, Low: 2, TBD: 1 }
+      const normPriority = (name: string) => name.replace(/^\d+\s*-\s*/, '')
+
+      // Table column sort overrides sidebar sort when in table view
+      if (viewMode === "table" && tableSort) {
+        const { column, order } = tableSort
+        let comparison = 0
+        switch (column) {
+          case "idReadable":
+            comparison = a.idReadable.localeCompare(b.idReadable)
+            break
+          case "summary":
+            comparison = a.summary.localeCompare(b.summary)
+            break
+          case "state":
+            comparison = a.state.name.localeCompare(b.state.name)
+            break
+          case "priority":
+            comparison = (PRIORITY_ORDER[normPriority(a.priority.name)] || 0) -
+                         (PRIORITY_ORDER[normPriority(b.priority.name)] || 0)
+            break
+          case "assignee":
+            comparison = (a.assignee?.name ?? "\uFFFF").localeCompare(b.assignee?.name ?? "\uFFFF")
+            break
+          case "initiative":
+            comparison = (a.initiative ?? "\uFFFF").localeCompare(b.initiative ?? "\uFFFF")
+            break
+          case "reporter":
+            comparison = (a.requestor?.name ?? a.reporter.name).localeCompare(b.requestor?.name ?? b.reporter.name)
+            break
+          case "created":
+            comparison = Number(a.created) - Number(b.created)
+            break
+        }
+        return order === "desc" ? -comparison : comparison
+      }
+
+      // Sidebar sort
       let comparison = 0
-      
       switch (sortBy) {
         case "created":
           comparison = Number(a.created) - Number(b.created)
@@ -171,29 +218,12 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
           comparison = Number(a.updated) - Number(b.updated)
           break
         case "priority":
-          const priorityOrder = { "Urgent": 5, "High": 4, "Medium": 3, "Low": 2, "TBD": 1 }
-          
-          // Normalize priority names to match our order mapping
-          const normalizePriority = (priorityName: string): string => {
-            if (priorityName === '0 - Urgent') return 'Urgent'
-            if (priorityName === '1 - High') return 'High'
-            if (priorityName === '2 - Medium') return 'Medium'
-            if (priorityName === '3 - Low') return 'Low'
-            if (priorityName === 'TBD') return 'TBD'
-            // Remove any number prefix pattern like "4 - Something" -> "Something"
-            return priorityName.replace(/^\d+\s*-\s*/, '')
-          }
-          
-          const normalizedA = normalizePriority(a.priority.name)
-          const normalizedB = normalizePriority(b.priority.name)
-          
-          comparison = (priorityOrder[normalizedA as keyof typeof priorityOrder] || 0) - 
-                      (priorityOrder[normalizedB as keyof typeof priorityOrder] || 0)
+          comparison = (PRIORITY_ORDER[normPriority(a.priority.name)] || 0) -
+                       (PRIORITY_ORDER[normPriority(b.priority.name)] || 0)
           break
         default:
           comparison = a.updated - b.updated
       }
-      
       return sortOrder === "desc" ? -comparison : comparison
     })
 
@@ -775,11 +805,12 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
         </>
       )}
 
-      {/* View Toggle */}
+      {/* View Toggle + Export */}
       {showFilters && (
-        <div className="flex items-center gap-1 mb-4 p-1 bg-breeze-100 rounded-lg w-fit">
+        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center gap-1 p-1 bg-breeze-100 rounded-lg w-fit">
           <button
-            onClick={() => setViewMode("cards")}
+            onClick={() => { setViewMode("cards"); setTableSort(null) }}
             className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
               viewMode === "cards"
                 ? "bg-white text-ocean-700 shadow-sm"
@@ -801,11 +832,25 @@ export function ProjectList({ projects, compact = false, showFilters = false }: 
             <span>Table</span>
           </button>
         </div>
+          <button
+            onClick={() => exportProjectsToCsv(filteredProjects)}
+            disabled={filteredProjects.length === 0}
+            className="flex items-center space-x-1.5 px-3 py-1.5 rounded-md text-sm font-medium transition-colors bg-white text-ocean-700 shadow-sm border border-breeze-300 hover:bg-breeze-50 disabled:opacity-40 disabled:cursor-not-allowed"
+          >
+            <Download className="w-4 h-4" />
+            <span>Export CSV</span>
+          </button>
+        </div>
       )}
 
       {/* Projects */}
       {viewMode === "table" ? (
-        <ProjectTable projects={filteredProjects} />
+        <ProjectTable
+          projects={filteredProjects}
+          sortColumn={tableSort?.column}
+          sortOrder={tableSort?.order}
+          onSort={handleTableSort}
+        />
       ) : (
         <>
           <div className={compact ? "glass-card border border-white/20 rounded-xl overflow-hidden" : "space-y-4"}>
