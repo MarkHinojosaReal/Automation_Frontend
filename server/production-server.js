@@ -9,6 +9,8 @@ const automationsRoutes = require('./routes/automations');
 const { registerYouTrackRoutes } = require('./routes/youtrack');
 const { createMetabaseInspectHandler } = require('./utils/metabase');
 const { createMetricsHandler } = require('./utils/metrics');
+const { createDownloadTransactionHandler, createDownloadAgentHandler } = require('./utils/rezen');
+const { createSearchHandler: createZendeskSearchHandler } = require('./utils/zendesk');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -60,6 +62,13 @@ const adminOnlyMiddleware = (req, res, next) => {
 
 // Automations routes (admin only)
 app.use('/api/automations', adminOnlyMiddleware, automationsRoutes);
+
+// reZEN file download routes (admin only)
+app.post('/api/rezen/download-transaction', adminOnlyMiddleware, createDownloadTransactionHandler());
+app.post('/api/rezen/download-agent', adminOnlyMiddleware, createDownloadAgentHandler());
+
+// Zendesk KB search route (admin only)
+app.post('/api/zendesk/search', adminOnlyMiddleware, createZendeskSearchHandler());
 
 // YouTrack configuration
 const YOUTRACK_BASE_URL = process.env.YOUTRACK_BASE_URL;
