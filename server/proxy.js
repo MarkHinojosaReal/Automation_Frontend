@@ -60,7 +60,10 @@ async function makeYouTrackRequest(endpoint, method = 'GET', body = null) {
         statusText: response.statusText,
         body: errorText
       });
-      throw new Error(`YouTrack API Error: ${response.status} ${response.statusText}`);
+      const err = new Error(`YouTrack API Error: ${response.status} ${response.statusText}`);
+      err.statusCode = response.status;
+      err.responseBody = errorText;
+      throw err;
     }
 
     const data = await response.json();
