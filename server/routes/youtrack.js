@@ -5,6 +5,61 @@ function sendProxyError(res, error) {
   });
 }
 
+function isRetryableUserError(error) {
+  return error.statusCode >= 400 && error.statusCode < 500;
+}
+
+async function createIssueWithFallback(payload, makeYouTrackRequest) {
+  const requestorField = (payload.customFields || []).find(
+    f => f.name === 'Requestor' && f.$type === 'SingleUserIssueCustomField'
+  );
+
+  if (!requestorField || !requestorField.value || !requestorField.value.login) {
+    return makeYouTrackRequest('/api/issues', 'POST', payload);
+  }
+
+  const originalLogin = requestorField.value.login;
+  const hasAtSign = originalLogin.includes('@');
+  const emailPrefix = hasAtSign ? originalLogin.split('@')[0] : originalLogin;
+
+  // Tier 1: try the payload as-is (email prefix as login)
+  try {
+    console.log(`📋 Tier 1: Creating issue with Requestor login "${originalLogin}"`);
+    return await makeYouTrackRequest('/api/issues', 'POST', payload);
+  } catch (tier1Error) {
+    if (!isRetryableUserError(tier1Error)) throw tier1Error;
+    console.warn(`⚠️ Tier 1 failed (${tier1Error.statusCode}): Requestor "${originalLogin}" not found in YouTrack`);
+  }
+
+  // Tier 2: try the alternative login format
+  const alternativeLogin = hasAtSign ? emailPrefix : `${originalLogin}@therealbrokerage.com`;
+  const tier2Payload = structuredClone(payload);
+  const tier2Requestor = tier2Payload.customFields.find(
+    f => f.name === 'Requestor' && f.$type === 'SingleUserIssueCustomField'
+  );
+  tier2Requestor.value = { login: alternativeLogin };
+
+  try {
+    console.log(`📋 Tier 2: Retrying with alternative login "${alternativeLogin}"`);
+    return await makeYouTrackRequest('/api/issues', 'POST', tier2Payload);
+  } catch (tier2Error) {
+    if (!isRetryableUserError(tier2Error)) throw tier2Error;
+    console.warn(`⚠️ Tier 2 failed (${tier2Error.statusCode}): Requestor "${alternativeLogin}" also not found`);
+  }
+
+  // Tier 3: strip Requestor, embed email in description
+  const tier3Payload = structuredClone(payload);
+  tier3Payload.customFields = tier3Payload.customFields.filter(
+    f => !(f.name === 'Requestor' && f.$type === 'SingleUserIssueCustomField')
+  );
+
+  const requestorEmail = hasAtSign ? originalLogin : `${originalLogin}@therealbrokerage.com`;
+  tier3Payload.description = (tier3Payload.description || '') + `\n\n**Requested by:** ${requestorEmail}`;
+
+  console.log(`📋 Tier 3: Creating issue without Requestor field, email embedded in description`);
+  return await makeYouTrackRequest('/api/issues', 'POST', tier3Payload);
+}
+
 function registerYouTrackRoutes(app, makeYouTrackRequest, options = {}) {
   const { includeTagRoute = false } = options;
 
@@ -41,7 +96,7 @@ function registerYouTrackRoutes(app, makeYouTrackRequest, options = {}) {
 
   app.post('/api/youtrack/issues', async (req, res) => {
     try {
-      const data = await makeYouTrackRequest('/api/issues', 'POST', req.body);
+      const data = await createIssueWithFallback(req.body, makeYouTrackRequest);
       res.json(data);
     } catch (error) {
       sendProxyError(res, error);

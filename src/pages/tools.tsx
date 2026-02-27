@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react"
+import React, { useState, useEffect, useRef, useCallback } from "react"
 import { Layout } from "../components/Layout"
 import { AuthGuard } from "../components/AuthGuard"
 import { ProtectedRoute } from "../components/ProtectedRoute"
@@ -13,7 +13,11 @@ import {
   ChevronRight,
   FileText,
   Download,
-  Plus
+  Plus,
+  FolderDown,
+  CheckCircle2,
+  AlertCircle,
+  BookOpen
 } from "lucide-react"
 import { youTrackService } from "../services/youtrack"
 import type { Ticket } from "../types"
@@ -65,6 +69,31 @@ interface FilteredMetrics {
   upcomingCostImpact: number
   totalTimeSaved: number
   totalCostImpact: number
+}
+
+interface TransactionResult {
+  transactionId: string
+  address?: string
+  fileCount?: number
+  error?: string
+}
+
+interface KBArticle {
+  id: number
+  title: string
+  snippetHtml: string
+  html_url: string
+  updated_at: string
+  locale: string
+  section_id: number
+  brand_id: number
+  is_internal: boolean
+}
+
+interface KBSearchResult {
+  query: string
+  count: number
+  results: KBArticle[]
 }
 
 function isMetabaseColumn(value: unknown): value is MetabaseColumn {
@@ -119,6 +148,24 @@ function ToolsPageContent() {
   const [reportError, setReportError] = useState<string>("")
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set())
 
+  // reZEN File Downloader state
+  const [rezenLookupMode, setRezenLookupMode] = useState<'transaction' | 'agent'>('transaction')
+  const [rezenTransactionId, setRezenTransactionId] = useState<string>("")
+  const [rezenYentaId, setRezenYentaId] = useState<string>("")
+  const [rezenLifecycleFilter, setRezenLifecycleFilter] = useState<string>("")
+  const [rezenDownloading, setRezenDownloading] = useState<boolean>(false)
+  const [rezenError, setRezenError] = useState<string>("")
+  const [rezenStatus, setRezenStatus] = useState<string>("")
+  const [rezenResults, setRezenResults] = useState<TransactionResult[] | null>(null)
+
+  // KB Search state
+  const [kbQuery, setKbQuery] = useState<string>("")
+  const [kbSearching, setKbSearching] = useState<boolean>(false)
+  const [kbError, setKbError] = useState<string>("")
+  const [kbResults, setKbResults] = useState<KBSearchResult | null>(null)
+  const kbAbortRef = useRef<AbortController | null>(null)
+  const kbDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   // Add Automation state
   const [automationName, setAutomationName] = useState<string>("")
   const [automationInitiative, setAutomationInitiative] = useState<string>("")
@@ -146,6 +193,24 @@ function ToolsPageContent() {
       category: 'Reporting',
       status: 'available',
       action: () => setSelectedTool('project-report')
+    },
+    {
+      id: 'rezen-downloader',
+      name: 'reZEN File Downloader',
+      description: 'Download transaction documents from reZEN by Transaction ID or Agent ID as a ZIP file.',
+      icon: <FolderDown className="w-6 h-6" />,
+      category: 'File Management',
+      status: 'available',
+      action: () => setSelectedTool('rezen-downloader')
+    },
+    {
+      id: 'kb-search',
+      name: 'KB Article Search',
+      description: 'Search Zendesk Help Center articles across internal and public knowledge bases.',
+      icon: <BookOpen className="w-6 h-6" />,
+      category: 'Knowledge Base',
+      status: 'available',
+      action: () => setSelectedTool('kb-search')
     },
     {
       id: 'add-automation',
@@ -376,6 +441,183 @@ function ToolsPageContent() {
       setCreateError(error instanceof Error ? error.message : 'An error occurred')
     } finally {
       setCreatingAutomation(false)
+    }
+  }
+
+  const executeKBSearch = useCallback(async (query: string, isManual = false) => {
+    if (!query.trim()) {
+      if (isManual) setKbError("Please enter a search query")
+      return
+    }
+
+    if (kbAbortRef.current) kbAbortRef.current.abort()
+    const controller = new AbortController()
+    kbAbortRef.current = controller
+
+    setKbSearching(true)
+    setKbError("")
+    if (isManual) setKbResults(null)
+
+    try {
+      const response = await fetch('/api/zendesk/search', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        signal: controller.signal,
+        body: JSON.stringify({
+          query: query.trim(),
+          perPage: 50,
+          maxPages: 4,
+          multibrand: true,
+          locale: '*',
+        }),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || `Search failed: ${response.status}`)
+      }
+
+      const data = await response.json() as KBSearchResult
+      setKbResults(data)
+    } catch (error) {
+      if (error instanceof DOMException && error.name === 'AbortError') return
+      setKbError(error instanceof Error ? error.message : 'An error occurred')
+    } finally {
+      if (!controller.signal.aborted) setKbSearching(false)
+    }
+  }, [])
+
+  const handleKBSearch = () => {
+    if (kbDebounceRef.current) clearTimeout(kbDebounceRef.current)
+    executeKBSearch(kbQuery, true)
+  }
+
+  useEffect(() => {
+    if (selectedTool !== 'kb-search') return
+    if (kbDebounceRef.current) clearTimeout(kbDebounceRef.current)
+
+    if (kbQuery.trim().length < 3) return
+
+    kbDebounceRef.current = setTimeout(() => {
+      executeKBSearch(kbQuery)
+    }, 400)
+
+    return () => {
+      if (kbDebounceRef.current) clearTimeout(kbDebounceRef.current)
+    }
+  }, [kbQuery, selectedTool, executeKBSearch])
+
+  const stripHtml = (html: string): string => {
+    const div = document.createElement('div')
+    div.innerHTML = html
+    return div.textContent || div.innerText || ''
+  }
+
+  const csvEscape = (v: string | number | null | undefined): string => {
+    const s = String(v == null ? '' : v)
+    if (/[",\n]/.test(s)) return '"' + s.replace(/"/g, '""') + '"'
+    return s
+  }
+
+  const exportKBCsv = () => {
+    if (!kbResults || kbResults.results.length === 0) return
+
+    const headers = ['Title', 'URL', 'Visibility', 'Locale', 'Updated At', 'Article ID', 'Section ID', 'Brand ID', 'Snippet']
+    const lines = [headers.join(',')]
+
+    for (const r of kbResults.results) {
+      const values = [
+        r.title || '',
+        r.html_url || '',
+        r.is_internal ? 'internal' : 'public',
+        r.locale || '',
+        r.updated_at || '',
+        r.id || '',
+        r.section_id || '',
+        r.brand_id || '',
+        stripHtml(r.snippetHtml || ''),
+      ]
+      lines.push(values.map(csvEscape).join(','))
+    }
+
+    const csv = lines.join('\n')
+    const q = kbResults.query.trim().toLowerCase().replace(/[^a-z0-9_-]+/g, '-').replace(/-+/g, '-').replace(/^-|-$/g, '')
+    const date = new Date().toISOString().slice(0, 10)
+    const filename = `zd_search_${q || 'results'}_${date}.csv`
+
+    const blob = new Blob(['\uFEFF' + csv], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = filename
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
+  const handleRezenDownload = async () => {
+    const isTransaction = rezenLookupMode === 'transaction'
+    const idValue = isTransaction ? rezenTransactionId.trim() : rezenYentaId.trim()
+
+    if (!idValue) {
+      setRezenError(isTransaction ? "Please enter a Transaction ID" : "Please enter an Agent/Yenta ID")
+      return
+    }
+
+    setRezenDownloading(true)
+    setRezenError("")
+    setRezenResults(null)
+    setRezenStatus(isTransaction ? "Fetching transaction files..." : "Fetching agent transactions...")
+
+    try {
+      const endpoint = isTransaction ? '/api/rezen/download-transaction' : '/api/rezen/download-agent'
+      const body = isTransaction
+        ? { transactionIds: idValue.split(',').map((id: string) => id.trim()).filter(Boolean) }
+        : { yentaId: idValue, lifecycleFilter: rezenLifecycleFilter || undefined }
+
+      const response = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify(body),
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || `Download failed: ${response.status}`)
+      }
+
+      const fileCount = response.headers.get('X-File-Count')
+      const txResultsHeader = response.headers.get('X-Transaction-Results')
+      let txResults: TransactionResult[] = []
+      if (txResultsHeader) {
+        try { txResults = JSON.parse(txResultsHeader) } catch { /* ignore */ }
+      }
+
+      setRezenStatus("Preparing download...")
+      const blob = await response.blob()
+      const disposition = response.headers.get('Content-Disposition')
+      const filenameMatch = disposition?.match(/filename="(.+)"/)
+      const filename = filenameMatch ? filenameMatch[1] : 'rezen-files.zip'
+
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = filename
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+
+      setRezenResults(txResults)
+      setRezenStatus(`Downloaded ${fileCount || '?'} files successfully`)
+    } catch (error) {
+      setRezenError(error instanceof Error ? error.message : 'An error occurred')
+      setRezenStatus("")
+    } finally {
+      setRezenDownloading(false)
     }
   }
 
@@ -853,6 +1095,369 @@ Cost Impact: ${formatted.timeSavings > 0 ? `~$${Math.round(formatted.costImpact)
               </div>
             )
           })()}
+        </div>
+      </Layout>
+    )
+  }
+
+  if (selectedTool === 'kb-search') {
+    return (
+      <Layout title="KB Article Search">
+        <div className="max-w-4xl mx-auto">
+          {/* Back to Tools */}
+          <div className="mb-6">
+            <button
+              onClick={() => {
+                setSelectedTool(null)
+                setKbError("")
+                setKbResults(null)
+                setKbQuery("")
+              }}
+              className="flex items-center space-x-2 text-ocean-300 hover:text-ocean-200 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" />
+              <span>Back to Tools Directory</span>
+            </button>
+          </div>
+
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="p-3 bg-gradient-to-br from-ocean-400 to-ocean-600 rounded-xl shadow-lg">
+                <BookOpen className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-breeze-800">KB Article Search</h1>
+                <p className="text-breeze-600 mt-1">
+                  Search internal and public Zendesk Help Center articles
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Search */}
+          <div className="card">
+            <div className="space-y-4">
+              <div className="flex space-x-4">
+                <div className="flex-1">
+                  <label htmlFor="kb-query" className="block text-sm font-medium text-breeze-700 mb-2">
+                    Search Query
+                  </label>
+                  <input
+                    id="kb-query"
+                    type="text"
+                    value={kbQuery}
+                    onChange={(e) => setKbQuery(e.target.value)}
+                    placeholder="Search internal and public Zendesk articles..."
+                    className="w-full px-3 py-2 bg-white border border-breeze-200 rounded-lg text-breeze-900 placeholder-breeze-400 focus:outline-none focus:ring-2 focus:ring-ocean-400/50 focus:border-ocean-400/50"
+                    onKeyDown={(e) => e.key === 'Enter' && !kbSearching && handleKBSearch()}
+                  />
+                </div>
+                <div className="flex items-end">
+                  <button
+                    onClick={handleKBSearch}
+                    disabled={kbSearching}
+                    className="btn-primary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                  >
+                    {kbSearching ? (
+                      <>
+                        <Loader2 className="w-4 h-4 animate-spin" />
+                        <span>Searching...</span>
+                      </>
+                    ) : (
+                      <>
+                        <Search className="w-4 h-4" />
+                        <span>Search</span>
+                      </>
+                    )}
+                  </button>
+                </div>
+              </div>
+
+              {/* Error */}
+              {kbError && (
+                <div className="p-4 bg-priority-high/10 border border-priority-high/20 rounded-lg">
+                  <p className="text-priority-high text-sm">{kbError}</p>
+                </div>
+              )}
+
+              {/* Results */}
+              {kbResults && (
+                <div className="space-y-4">
+                  {/* Result count + export */}
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm text-breeze-600">
+                      {kbResults.query ? `"${kbResults.query}"` : 'Results'} &mdash; {kbResults.count} article(s)
+                    </p>
+                    {kbResults.results.length > 0 && (
+                      <button
+                        onClick={exportKBCsv}
+                        className="flex items-center space-x-1 text-sm text-ocean-600 hover:text-ocean-500 transition-colors"
+                      >
+                        <Download className="w-4 h-4" />
+                        <span>Export CSV</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {/* No results */}
+                  {kbResults.results.length === 0 && (
+                    <div className="text-sm text-breeze-500 py-2">
+                      No articles found.
+                    </div>
+                  )}
+
+                  {/* Article cards */}
+                  {kbResults.results.map((article) => (
+                    <div
+                      key={article.id}
+                      className="bg-white border border-breeze-200 rounded-lg p-4"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <a
+                          href={article.html_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="font-semibold text-ocean-600 hover:text-ocean-700 hover:underline transition-colors"
+                        >
+                          {article.title}
+                        </a>
+                        <span className={`ml-2 flex-shrink-0 px-2 py-0.5 text-xs font-medium rounded-full ${
+                          article.is_internal
+                            ? 'bg-priority-high/10 text-priority-high border border-priority-high/20'
+                            : 'bg-breeze-100 text-breeze-500 border border-breeze-200'
+                        }`}>
+                          {article.is_internal ? 'internal' : 'public'}
+                        </span>
+                      </div>
+                      {article.snippetHtml && (
+                        <div
+                          className="text-sm text-breeze-600 mb-2 [&_em]:not-italic [&_em]:bg-yellow-100 [&_em]:text-breeze-900 [&_em]:px-0.5 [&_em]:rounded"
+                          dangerouslySetInnerHTML={{
+                            __html: article.snippetHtml
+                              .replace(/<(?!em|\/em)[^>]*>/g, '')
+                          }}
+                        />
+                      )}
+                      <div className="text-xs text-breeze-400">
+                        Locale: {article.locale || '\u2014'} &bull; Updated: {
+                          article.updated_at
+                            ? new Date(article.updated_at).toLocaleDateString()
+                            : '\u2014'
+                        }
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+      </Layout>
+    )
+  }
+
+  if (selectedTool === 'rezen-downloader') {
+    return (
+      <Layout title="reZEN File Downloader">
+        <div className="max-w-4xl mx-auto">
+          {/* Back to Tools */}
+          <div className="mb-6">
+            <button
+              onClick={() => {
+                setSelectedTool(null)
+                setRezenError("")
+                setRezenStatus("")
+                setRezenResults(null)
+              }}
+              className="flex items-center space-x-2 text-ocean-300 hover:text-ocean-200 transition-colors"
+            >
+              <ChevronRight className="w-4 h-4 rotate-180" />
+              <span>Back to Tools Directory</span>
+            </button>
+          </div>
+
+          {/* Header */}
+          <div className="mb-8">
+            <div className="flex items-center space-x-3 mb-4">
+              <div className="p-3 bg-gradient-to-br from-ocean-400 to-ocean-600 rounded-xl shadow-lg">
+                <FolderDown className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h1 className="text-3xl font-bold text-breeze-800">reZEN File Downloader</h1>
+                <p className="text-breeze-600 mt-1">
+                  Download transaction documents from reZEN as a ZIP file
+                </p>
+              </div>
+            </div>
+          </div>
+
+          {/* Tool Content */}
+          <div className="card">
+            <div className="space-y-6">
+              {/* Lookup Mode Toggle */}
+              <div>
+                <label className="block text-sm font-medium text-breeze-700 mb-2">
+                  Lookup Type
+                </label>
+                <div className="flex rounded-lg overflow-hidden border border-breeze-200">
+                  <button
+                    onClick={() => setRezenLookupMode('transaction')}
+                    className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+                      rezenLookupMode === 'transaction'
+                        ? 'bg-ocean-500 text-white'
+                        : 'bg-white text-breeze-600 hover:bg-breeze-50'
+                    }`}
+                  >
+                    Transaction ID
+                  </button>
+                  <button
+                    onClick={() => setRezenLookupMode('agent')}
+                    className={`flex-1 px-4 py-2 text-sm font-medium transition-colors ${
+                      rezenLookupMode === 'agent'
+                        ? 'bg-ocean-500 text-white'
+                        : 'bg-white text-breeze-600 hover:bg-breeze-50'
+                    }`}
+                  >
+                    Agent / Yenta ID
+                  </button>
+                </div>
+              </div>
+
+              {/* Transaction ID Input */}
+              {rezenLookupMode === 'transaction' && (
+                <div>
+                  <label htmlFor="rezen-transaction-id" className="block text-sm font-medium text-breeze-700 mb-2">
+                    Transaction ID(s)
+                  </label>
+                  <input
+                    id="rezen-transaction-id"
+                    type="text"
+                    value={rezenTransactionId}
+                    onChange={(e) => setRezenTransactionId(e.target.value)}
+                    placeholder="Enter transaction ID (or comma-separated for multiple)"
+                    className="w-full px-3 py-2 bg-white border border-breeze-200 rounded-lg text-breeze-900 placeholder-breeze-400 focus:outline-none focus:ring-2 focus:ring-ocean-400/50 focus:border-ocean-400/50"
+                    onKeyDown={(e) => e.key === 'Enter' && !rezenDownloading && handleRezenDownload()}
+                  />
+                  <p className="text-xs text-breeze-400 mt-1">
+                    UUID format, e.g. 1a2b3c4d-5e6f-7a8b-9c0d-1e2f3a4b5c6d
+                  </p>
+                </div>
+              )}
+
+              {/* Agent ID Input */}
+              {rezenLookupMode === 'agent' && (
+                <div className="space-y-4">
+                  <div>
+                    <label htmlFor="rezen-yenta-id" className="block text-sm font-medium text-breeze-700 mb-2">
+                      Agent / Yenta ID
+                    </label>
+                    <input
+                      id="rezen-yenta-id"
+                      type="text"
+                      value={rezenYentaId}
+                      onChange={(e) => setRezenYentaId(e.target.value)}
+                      placeholder="Enter agent Yenta ID"
+                      className="w-full px-3 py-2 bg-white border border-breeze-200 rounded-lg text-breeze-900 placeholder-breeze-400 focus:outline-none focus:ring-2 focus:ring-ocean-400/50 focus:border-ocean-400/50"
+                      onKeyDown={(e) => e.key === 'Enter' && !rezenDownloading && handleRezenDownload()}
+                    />
+                  </div>
+                  <div>
+                    <label htmlFor="rezen-lifecycle" className="block text-sm font-medium text-breeze-700 mb-2">
+                      Lifecycle Filter
+                    </label>
+                    <select
+                      id="rezen-lifecycle"
+                      value={rezenLifecycleFilter}
+                      onChange={(e) => setRezenLifecycleFilter(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-breeze-200 rounded-lg text-breeze-900 focus:outline-none focus:ring-2 focus:ring-ocean-400/50 focus:border-ocean-400/50"
+                    >
+                      <option value="">All (Open, Closed, Terminated)</option>
+                      <option value="OPEN">Open only</option>
+                      <option value="CLOSED">Closed only</option>
+                      <option value="TERMINATED">Terminated only</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {/* Download Button */}
+              <div className="flex items-end">
+                <button
+                  onClick={handleRezenDownload}
+                  disabled={rezenDownloading}
+                  className="btn-primary flex items-center space-x-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {rezenDownloading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Downloading...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4" />
+                      <span>Download Files</span>
+                    </>
+                  )}
+                </button>
+              </div>
+
+              {/* Status Message */}
+              {rezenStatus && !rezenError && (
+                <div className={`p-4 rounded-lg flex items-center space-x-3 ${
+                  rezenResults
+                    ? 'bg-status-done/10 border border-status-done/20'
+                    : 'bg-ocean-50 border border-ocean-200'
+                }`}>
+                  {rezenResults ? (
+                    <CheckCircle2 className="w-5 h-5 text-status-done flex-shrink-0" />
+                  ) : (
+                    <Loader2 className="w-5 h-5 text-ocean-600 animate-spin flex-shrink-0" />
+                  )}
+                  <span className={`text-sm font-medium ${rezenResults ? 'text-status-done' : 'text-ocean-700'}`}>
+                    {rezenStatus}
+                  </span>
+                </div>
+              )}
+
+              {/* Error */}
+              {rezenError && (
+                <div className="p-4 bg-priority-high/10 border border-priority-high/20 rounded-lg flex items-center space-x-3">
+                  <AlertCircle className="w-5 h-5 text-priority-high flex-shrink-0" />
+                  <p className="text-priority-high text-sm">{rezenError}</p>
+                </div>
+              )}
+
+              {/* Results Summary */}
+              {rezenResults && rezenResults.length > 0 && (
+                <div className="bg-white border border-breeze-200 rounded-lg p-4">
+                  <h4 className="font-semibold text-breeze-800 mb-3">Download Summary</h4>
+                  <div className="space-y-2">
+                    {rezenResults.map((result) => (
+                      <div
+                        key={result.transactionId}
+                        className="flex items-center justify-between text-sm py-1 border-b border-breeze-100 last:border-b-0"
+                      >
+                        <div className="flex items-center space-x-2">
+                          {result.error ? (
+                            <AlertCircle className="w-4 h-4 text-priority-high" />
+                          ) : (
+                            <CheckCircle2 className="w-4 h-4 text-status-done" />
+                          )}
+                          <span className="font-medium text-breeze-800">
+                            {result.address || result.transactionId.substring(0, 8) + '...'}
+                          </span>
+                        </div>
+                        <span className={`${result.error ? 'text-priority-high' : 'text-breeze-500'}`}>
+                          {result.error ? 'Error' : `${result.fileCount} files`}
+                        </span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       </Layout>
     )

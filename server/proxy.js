@@ -8,6 +8,8 @@ const automationsRoutes = require('./routes/automations');
 const { registerYouTrackRoutes } = require('./routes/youtrack');
 const { createMetabaseInspectHandler } = require('./utils/metabase');
 const { createMetricsHandler } = require('./utils/metrics');
+const { createDownloadTransactionHandler, createDownloadAgentHandler } = require('./utils/rezen');
+const { createSearchHandler: createZendeskSearchHandler } = require('./utils/zendesk');
 
 const app = express();
 const PORT = 3001;
@@ -58,7 +60,10 @@ async function makeYouTrackRequest(endpoint, method = 'GET', body = null) {
         statusText: response.statusText,
         body: errorText
       });
-      throw new Error(`YouTrack API Error: ${response.status} ${response.statusText}`);
+      const err = new Error(`YouTrack API Error: ${response.status} ${response.statusText}`);
+      err.statusCode = response.status;
+      err.responseBody = errorText;
+      throw err;
     }
 
     const data = await response.json();
@@ -113,6 +118,13 @@ const adminOnlyMiddleware = (req, res, next) => {
 
 // Automations routes (admin only)
 app.use('/api/automations', adminOnlyMiddleware, automationsRoutes);
+
+// reZEN file download routes (admin only)
+app.post('/api/rezen/download-transaction', adminOnlyMiddleware, createDownloadTransactionHandler());
+app.post('/api/rezen/download-agent', adminOnlyMiddleware, createDownloadAgentHandler());
+
+// Zendesk KB search route (admin only)
+app.post('/api/zendesk/search', adminOnlyMiddleware, createZendeskSearchHandler());
 
 // Error handling middleware
 app.use((err, req, res, next) => {

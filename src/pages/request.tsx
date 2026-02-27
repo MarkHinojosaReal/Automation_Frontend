@@ -117,6 +117,7 @@ function RequestPageContent() {
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [showSuccessModal, setShowSuccessModal] = useState(false)
   const [ticketNumber, setTicketNumber] = useState("")
+  const [submitError, setSubmitError] = useState<string | null>(null)
   
   // Update email when user info is loaded
   useEffect(() => {
@@ -132,13 +133,6 @@ function RequestPageContent() {
   const [showNoLinksModal, setShowNoLinksModal] = useState(false)
   const [urlValidation, setUrlValidation] = useState<'idle' | 'validating' | 'valid' | 'invalid'>('idle')
   const [urlValidationMessage, setUrlValidationMessage] = useState('')
-
-  // Generate a mock ticket number (in real implementation, this would come from the API)
-  const generateTicketNumber = () => {
-    const currentYear = new Date().getFullYear()
-    const randomNumber = Math.floor(Math.random() * 9000) + 1000
-    return `ATOP-${randomNumber}`
-  }
 
   const validateExistingProjectUrl = async (url: string) => {
     if (!url.trim()) {
@@ -252,7 +246,7 @@ function RequestPageContent() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target
     setFormData(prev => ({ ...prev, [name]: value }))
-    // Clear error when user starts typing
+    if (submitError) setSubmitError(null)
     if (errors[name]) {
       setErrors(prev => ({ ...prev, [name]: "" }))
     }
@@ -362,6 +356,7 @@ function RequestPageContent() {
 
   const submitForm = async () => {
     setIsSubmitting(true)
+    setSubmitError(null)
     
     try {
       const isEnhancement = formData.type === 'update-automation'
@@ -395,10 +390,9 @@ function RequestPageContent() {
         newTicketNumber = extractTicketNumber(response.data)
       }
       
-      // If we couldn't extract the real ticket number, generate a placeholder
       if (!newTicketNumber) {
-        console.warn('Could not extract ticket number from response, using generated number')
-        newTicketNumber = generateTicketNumber()
+        console.warn('Could not extract ticket number from response')
+        newTicketNumber = 'ATOP-???'
       }
       
       setTicketNumber(newTicketNumber)
@@ -411,17 +405,13 @@ function RequestPageContent() {
         }
       }
 
-      // Show success modal
       setShowSuccessModal(true)
       
     } catch (error) {
       console.error('Error submitting form:', error)
-      // Show error handling - for now, fall back to generated ticket number
-      // In a real production environment, you might want to show an error modal instead
-      console.warn('API call failed, using generated ticket number as fallback')
-      const fallbackTicketNumber = generateTicketNumber()
-      setTicketNumber(fallbackTicketNumber)
-      setShowSuccessModal(true)
+      setSubmitError(
+        'Something went wrong submitting your request. Please try again or reach out to the Automation Ops team directly.'
+      )
     } finally {
       setIsSubmitting(false)
     }
@@ -429,7 +419,7 @@ function RequestPageContent() {
 
   const handleModalClose = () => {
     setShowSuccessModal(false)
-    // Reset form after modal is closed
+    setSubmitError(null)
     setFormData({
       priority: "medium",
       type: "new-automation",
@@ -749,6 +739,25 @@ function RequestPageContent() {
                   </FormField>
                 </div>
                 
+                {/* Submit Error */}
+                {submitError && (
+                  <div className="bg-red-50 border border-red-200 rounded-xl p-4 mb-4">
+                    <div className="flex items-start space-x-3">
+                      <AlertCircle className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0" />
+                      <div>
+                        <p className="text-sm text-red-700">{submitError}</p>
+                        <button
+                          type="button"
+                          onClick={() => setSubmitError(null)}
+                          className="text-xs text-red-500 hover:text-red-600 mt-1 underline"
+                        >
+                          Dismiss
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
                 {/* Submit Button */}
                 <div className="flex justify-center pt-6 border-t border-white/10">
                   <button 
